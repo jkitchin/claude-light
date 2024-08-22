@@ -6,17 +6,51 @@ This repository contains the app code to run a claude-light server and to intera
 It is a WIP.
 
 * Setup
+** Register the MAC address
+
+At CMU it is necessary to do this so you can get an IP address.
 
 ** Setup the Raspberry Pi
 
-You have to enable the I2C interface
+This is mostly a one time setup on a new pi.
 
-** Setup a virtual environment for Python
+I recommend running all the updates. You may want to run raspi-config to update first.
+
+> sudo apt update
+> sudo apt full-upgrade
+> sudo apt clean
+
+Maybe this should be done weekly? You can find a script for this at [[./update-pi.sh]].
+
+You have to enable the I2C interface in raspi-config
+
+> sudo raspi-config
+
+go to interface options, then to I2C to enable it
+
+** Setup and activate a virtual environment for Python
+
+python -m venv .venv
+source .venv/bin/activate
 
 ** Install claude
+
+> pip install git+git://github.com/jkitchin/claude
+
+I think this will install all the dependencies and it should also install a cli called ~claude~ that will start the app. Normally you would only run this on the Raspberry Pi.
 
 You also have to set  up /etc/rc.local to automatically start the server
 
 add something like this:
 
-sudo -u jkitchin /home/jkitchin/claude-light/run.sh &
+sudo -u jkitchin claude &
+
+It is a little tricky to kill the server. So far I use:
+
+> ps aux | grep claude
+
+to find a PID, and then kill it.
+
+> pkill claude
+
+also works.
