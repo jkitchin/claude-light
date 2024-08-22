@@ -53,6 +53,13 @@ The package is only available on GitHUB. Install it like this.
 pip install git+git://github.com/jkitchin/claude
 #+END_SRC
 
+Alternatively
+
+#+BEGIN_SRC sh
+git clone git@github.com:jkitchin/claude.git
+pip install -e claude
+#+END_SRC
+
 
 I think this will install all the dependencies and it should also install a cli called ~claude~ that will start the app. Normally you would only run this on the Raspberry Pi.
 
@@ -67,3 +74,7 @@ pkill claude
 #+END_SRC
 
 
+** Access the server
+
+This url is only available on CMU campus or with the CMU VPN:
+http://claude2.cheme.local.cmu.edu:5000/?R=0.4&G=0.5&B=0.9
