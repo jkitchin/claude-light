@@ -12,8 +12,6 @@ dependencies = [
 	     "lgpio",
 	     "gpiozero",
 	     "flask",
-	     "retry",
-	     "requests",
 	     "jsonlines"]
 license = {text = "MIT"}
 dynamic = ["version"]

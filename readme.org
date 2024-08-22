@@ -57,7 +57,7 @@ Alternatively
 
 #+BEGIN_SRC sh
 git clone git@github.com:jkitchin/claude-light.git
-pip install -e claude
+pip install -e claude-pi
 #+END_SRC
 
 
@@ -73,6 +73,8 @@ It is a little tricky to kill the server. So far I use:
 pkill claude
 #+END_SRC
 
+
+I guess I am not too crazy about the requirements you need for the server and those for cl_light. They are independent, but for now I have them in the same package.
 
 ** Access the server
 
