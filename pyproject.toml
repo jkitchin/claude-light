@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude"
+authors = [{name = "John Kitchin", email = "jkitchin@andrew.cmu.edu"}]
+dependencies = [
+	     "Adafruit-Blinka",
+	     "adafruit-circuitpython-as7341",
+	     "gpiozero",
+	     "flask",
+	     "jsonlines"]
+license = {text = "MIT"}
+dynamic = ["version"]
+
+[project.scripts]
+claude = "claude.app:run"
