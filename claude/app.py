@@ -42,6 +42,11 @@ def rgb():
                      'nir'], data)}}
 
     led.color = (0, 0, 0)
+
+    # I explicitly close so that it is clean to restart. Otherwise, it
+    # seems like the gpio ports are in use and you have to
+    # reboot. there might be some cli way to clear it, but I don't
+    # know what it is.
     led.close()
     
     with jsonlines.open('results.jsonl', 'a') as f:
