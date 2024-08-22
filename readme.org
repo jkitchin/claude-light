@@ -77,4 +77,7 @@ pkill claude
 ** Access the server
 
 This url is only available on CMU campus or with the CMU VPN:
+
 http://claude2.cheme.local.cmu.edu:5000/?R=0.4&G=0.5&B=0.9
+
+The R, G and B parameters can be between 0-1.
