@@ -1,0 +1,15 @@
+* Setup
+
+** Setup the Raspberry Pi
+
+You have to enable the I2C interface
+
+** Setup a virtual environment for Python
+
+** Install claude
+
+You also have to set  up /etc/rc.local to automatically start the server
+
+add something like this:
+
+sudo -u jkitchin /home/jkitchin/claude-light/run.sh &
