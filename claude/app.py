@@ -1,11 +1,13 @@
 #!/home/jkitchin/claude-light/.venv/bin/python
 
+import os
 from flask import Flask, request, jsonify
 from gpiozero import RGBLED 
 import time
 import board
 from adafruit_as7341 import AS7341
 import jsonlines
+
 
 i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = AS7341(i2c)
@@ -26,20 +28,17 @@ def rgb():
     B = min(max(B, 0.0), 1.0)
     
     led.color = (R, G, B)
-    time.sleep(1)
+    
     data = sensor.all_channels
     
     results = {        
         'in': [R, G, B],
         'out': {key:val for key, val in
                 zip([
-
-
                     '415nm', '445nm', '480nm',
-
-                     '515nm', '555nm', '590nm',
-                     '630nm', '680nm', 'clear',
-                     'nir'], data)}}
+                    '515nm', '555nm', '590nm',
+                    '630nm', '680nm', 'clear',
+                    'nir'], data)}}
 
     led.color = (0, 0, 0)
 
@@ -49,7 +48,7 @@ def rgb():
     # know what it is.
     led.close()
     
-    with jsonlines.open('results.jsonl', 'a') as f:
+    with jsonlines.open(os.path.expanduser('~/results.jsonl'), 'a') as f:
         d = results.copy()
         d.update({'t0': t0,
                   'elapsed_time': time.time() - t0,
