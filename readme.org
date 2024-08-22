@@ -50,13 +50,13 @@ If not, you have to manually run this.
 The package is only available on GitHUB. Install it like this.
 
 #+BEGIN_SRC sh
-pip install git+git://github.com/jkitchin/claude
+pip install git+git://github.com/jkitchin/claude-light
 #+END_SRC
 
 Alternatively
 
 #+BEGIN_SRC sh
-git clone git@github.com:jkitchin/claude.git
+git clone git@github.com:jkitchin/claude-light.git
 pip install -e claude
 #+END_SRC
 
