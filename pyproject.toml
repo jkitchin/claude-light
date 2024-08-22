@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "claude"
 authors = [{name = "John Kitchin", email = "jkitchin@andrew.cmu.edu"}]
 dependencies = [
+	     "waitress",
 	     "Adafruit-Blinka",
 	     "adafruit-circuitpython-as7341",
 	     "gpiozero",
