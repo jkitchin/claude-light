@@ -1,3 +1,10 @@
+#+title: Claude lab
+
+
+This repository contains the app code to run a claude-light server and to interact with it through Python.
+
+It is a WIP.
+
 * Setup
 
 ** Setup the Raspberry Pi
