@@ -9,6 +9,7 @@ dependencies = [
 	     "waitress",
 	     "Adafruit-Blinka",
 	     "adafruit-circuitpython-as7341",
+	     "lgpio",
 	     "gpiozero",
 	     "flask",
 	     "jsonlines"]
