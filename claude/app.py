@@ -66,14 +66,20 @@ def greenmachine1():
     of the WTFform protections. It is unclear how much that matters.
     """
     data = None
+
     if request.method == 'POST':
-        G = G = min(max(float(request.form['G']) / 100, 0.0), 1.0)
+        G = min(max(float(request.form['G']) / 100, 0.0), 1.0)
         data = measure(0, G, 0)
         green = data['out']['515nm']
+        return render_template("green-machine1.html",
+                               value=G * 100,
+                               Ginput=G,
+                               data=green)
     return render_template("green-machine1.html",
-                           value=G * 100,
-                           Ginput=G,
-                           data=green)
+                           value=0.5,
+                           Ginput=None,
+                           data=None)
+
 
 def run():
     """This is used to run the server."""

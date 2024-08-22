@@ -1,12 +1,29 @@
-<h1>Green Machine #1</h1>
+<!DOCTYPE html>
+<html>
+  <style>
+table, th, td {
+  border:1px solid black;
+  border-collapse: collapse;
+}
+</style>
+  <body>
+    <h1>Green Machine #1</h1>
 
-Drag the slider bar and press Measure. The slider goes from 0 to 1. The input and output will show below the slider when the measurement is done.
+    Drag the slider bar and press Measure. The slider goes from 0 to 1. The input and output will show below the slider when the measurement is done.
 
-<br>
-<form method="post">
-  Green: <input type="range" min="0" max="100" value={{value}} name="G" />
-  <button type="submit">Measure</button>
-  <br>
-  <br>
-  Green input: {{Ginput}} : output: {{ data }}
-</form>
+    <br>
+    <form method="post">
+      Green: <input type="range" min="0" max="100" value={{value}} name="G" />
+      <button type="submit">Measure</button>
+      <br>
+      <br>
+      <h2>Results</h2>
+      Note you can copy the row of results into an Excel table. 
+      <table style="width:33%">
+	<tr><th>Input</th><th>Output</th></tr>
+	<tr><th>{{ Ginput }}</th><th>{{ data }}</th></tr>
+      </table>
+    </form>
+
+  </body>
+</html>
