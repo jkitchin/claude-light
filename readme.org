@@ -1,6 +1,5 @@
 #+title: Claude lab
 
-
 This repository contains the app code to run a claude-light server and to interact with it through Python.
 
 It is a WIP.
@@ -16,41 +15,55 @@ This is mostly a one time setup on a new pi.
 
 I recommend running all the updates. You may want to run raspi-config to update first.
 
-> sudo apt update
-> sudo apt full-upgrade
-> sudo apt clean
+#+BEGIN_SRC sh
+sudo apt update && apt full-upgrade && apt clean
+#+END_SRC
 
 Maybe this should be done weekly? You can find a script for this at [[./update-pi.sh]].
 
 You have to enable the I2C interface in raspi-config
 
-> sudo raspi-config
+#+BEGIN_SRC sh
+sudo raspi-config
+#+END_SRC
 
-go to interface options, then to I2C to enable it
+go to interface options, then to I2C to enable it. I don't recall if a reboot is necessary.
 
 ** Setup and activate a virtual environment for Python
 
+I suggest you run this in ~/
+
+#+BEGIN_SRC sh
 python -m venv .venv
-source .venv/bin/activate
+#+END_SRC
+
+I also recommend add this line to .bashrc so it loads when you login.
+
+#+BEGIN_SRC sh
+source ~/.venv/bin/activate
+#+END_SRC
+
+If not, you have to manually run this.
 
 ** Install claude
 
-> pip install git+git://github.com/jkitchin/claude
+The package is only available on GitHUB. Install it like this.
+
+#+BEGIN_SRC sh
+pip install git+git://github.com/jkitchin/claude
+#+END_SRC
+
 
 I think this will install all the dependencies and it should also install a cli called ~claude~ that will start the app. Normally you would only run this on the Raspberry Pi.
 
-You also have to set  up /etc/rc.local to automatically start the server
-
-add something like this:
+You also have to set  up /etc/rc.local to automatically start the server when it boots up. To achieve this, add something like this before the ~exit 0~ line.:
 
 sudo -u jkitchin claude &
 
 It is a little tricky to kill the server. So far I use:
 
-> ps aux | grep claude
+#+BEGIN_SRC sh
+pkill claude
+#+END_SRC
 
-to find a PID, and then kill it.
 
-> pkill claude
-
-also works.

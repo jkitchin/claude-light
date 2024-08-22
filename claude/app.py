@@ -8,7 +8,6 @@ import board
 from adafruit_as7341 import AS7341
 import jsonlines
 
-
 i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = AS7341(i2c)
 
