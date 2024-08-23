@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1>Claude light</h1>
+    Claude Light is a simple instrument inspired by the work by Sterling Baird and Taylor Sparks in this <a href="https://www.sciencedirect.com/science/article/pii/S2666166723002964">paper</a>. Claude light has only a few minor variations:
+
+    <ul>
+      <li>I use a REST API instead of MQTT because it is easier to develop.</li>
+      <li>I use an ethernet cable because the wifi at school is too secure to connect a PicoW</li>
+      <li>I use a Raspberry Pi instead of a PicoW because it has built in Ethernet port, and I find it easier to debug since I can ssh into it and it has a display port.</li>
+      <li> I use float inputs from 0-1 instead of integers. In the program that runs it, floats are the inputs anyway, and the continuous inputs are easier to introduce in my opinion.</li>
+    </ul>
+
+    <p>There are two ways to interact with Claude light. First, visit the <a href="/gm">Green Machine 1</a>. This is a simple web form where you can enter numbers for the level of green light to measure, and then get a tabular data you can copy and paste or download.</p>
+
+    <p>The second way is by URL or http request. For example you can visit <a href="/?R=0.12&G=0.45&B=1">?R=0.12&G=0.45&B=1</a> in a browser or by using the Python requests package and you will get a json packet back with the results from that RGB setting. The instrument returns 8 different wavelengths of visible light.</p>
+	
+  </body>
+</html>

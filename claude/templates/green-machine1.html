@@ -9,20 +9,25 @@ table, th, td {
   <body>
     <h1>Green Machine #1</h1>
 
-    Drag the slider bar and press Measure. The slider goes from 0 to 1. The input and output will show below the slider when the measurement is done.
-
+    Enter numbers between 0 to 1 in the input box. Separate the numbers by commas. For example, 0, 0.1, 0.2. Press Enter/Return or the Measure button to start the experiment.
+    <br>
     <br>
     <form method="post">
-      Green: <input type="range" min="0" max="100" value={{value}} name="G" />
+      Green: <input type="text" name="G"/>
       <button type="submit">Measure</button>
       <br>
       <br>
       <h2>Results</h2>
-      Note you can copy the row of results into an Excel table. 
+      You should be able to copy and paste this table into Excel.
       <table style="width:33%">
 	<tr><th>Input</th><th>Output</th></tr>
-	<tr><th>{{ Ginput }}</th><th>{{ data }}</th></tr>
+	{% for row in data %}
+	<tr><th>{{ row[0] }}</th><th>{{ row[1] }}</th></tr>
+	{% endfor %}
       </table>
+      <br>
+      <br>
+      Download: <a download="data.csv" href="data:text/csv;base64,{{ b64 }}" target=_"blank">Download csv file</a>
     </form>
 
   </body>

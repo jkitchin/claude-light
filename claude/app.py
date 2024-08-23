@@ -1,7 +1,8 @@
 #!/home/jkitchin/claude-light/.venv/bin/python
 
+import base64
 import os
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, render_template
 from gpiozero import RGBLED 
 import time
 import board
@@ -58,27 +59,33 @@ def rgb():
     B = float(request.args.get('B') or 0)
     B = min(max(B, 0.0), 1.0)
     
-    return jsonify(measure(R, G, B))
+    return measure(R, G, B)
 
 @app.route('/gm', methods=['GET', 'POST'])
 def greenmachine1():
     """This is a form for browser use. It is not the most secure, and has none
     of the WTFform protections. It is unclear how much that matters.
     """
-    data = None
-
+    
     if request.method == 'POST':
-        G = min(max(float(request.form['G']) / 100, 0.0), 1.0)
-        data = measure(0, G, 0)
-        green = data['out']['515nm']
+        Gs = [v.strip() or '0' for v in request.form['G'].split(',')]
+        Gin = [min(max(float(x), 0.0), 1.0) for x in Gs]
+        Gout = [measure(0, x, 0)['out']['515nm'] for x in Gin]
+
+        output = list(zip(Gin, Gout))
+        csv = '\n'.join([','.join([str(x) for x in row]) for row in output])
+        b64 = base64.b64encode(csv.encode('utf-8')).decode("utf8")
+        
         return render_template("green-machine1.html",
-                               value=G * 100,
-                               Ginput=G,
-                               data=green)
-    return render_template("green-machine1.html",
-                           value=0.5,
-                           Ginput=None,
-                           data=None)
+                               data=output,
+                               b64=b64)
+    # this is from GET
+    return render_template("green-machine1.html",                           
+                           data=())
+
+@app.route('/about')
+def about():
+    return render_template("about.html")
 
 
 def run():
