@@ -1,10 +1,83 @@
-#+title: Claude lab
-
+#+title: Claude light
+#+author: John Kitchin
+#+MACRO: 
 This repository contains the app code to run a claude-light server and to interact with it through Python.
 
-It is a WIP.
+* About
 
-* Setup
+Claude Light is a simple instrument inspired by the work by Sterling Baird and Taylor Sparks in these papers:
+
+- Baird, S. G., & Sparks, T. D. (2022). What is a minimal working example for a
+  self-driving laboratory? Matter, 5(12), 4170–4178.
+  http://dx.doi.org/10.1016/j.matt.2022.11.007
+
+- Baird, S. G., & Sparks, T. D. (2023). Building a "Hello World" for
+  self-driving labs: the closed-loop spectroscopy lab light-mixing demo. STAR
+  Protocols, 4(2), 102329. http://dx.doi.org/10.1016/j.xpro.2023.102329
+
+
+Claude light has only a few minor variations:
+
+- I use a REST API instead of MQTT because it is easier to develop. Specifically, by using flask we can provide a variety of interfaces at different levels of sophistication including a browser interface and API access.
+- I use an ethernet cable because the wifi at school is too secure to connect a PicoW
+- I use a Raspberry Pi instead of a PicoW because it has built in Ethernet port, and I find it easier to debug since I can ssh into it and it has a display port. The Pi also enables better logging.
+- I use float inputs from 0-1 instead of integers. In the program that runs it, floats are the inputs anyway, and the continuous inputs are easier to introduce in my opinion.
+- With the Rpi I can use the full Python language which I am more familiar with than MicroPython, and it has more functionality.
+
+Claude-light is currently hosted at http://claude2.cheme.local.cmu.edu:5000 and it is only accessible on CMU campus or with CMU VPN.
+
+There are two ways to interact with Claude light. First, in your browser visit 
+http://claude2.cheme.local.cmu.edu:5000/gm to see a simple web form where you can enter numbers for the level of green light to measure, and then get a tabular data you can copy and paste or download.
+
+The second way is by URL or http request. For example you can visit
+http://claude2.cheme.local.cmu.edu:5000?R=0.12&G=0.45&B=1 in a browser, with curl in a shell or by using the Python requests package and you will get a json packet back with the results from that RGB setting. The instrument returns 8 different wavelengths of visible light.
+
+Here is an API example with curl. You could process this by using jq in a shell if desired.
+
+#+BEGIN_SRC sh :results output
+curl "http://claude2.cheme.local.cmu.edu:5000?R=0.12&G=0.45&B=1" 
+#+END_SRC
+
+#+RESULTS:
+: {"in":[0.12,0.45,1.0],"out":{"415nm":3513,"445nm":65535,"480nm":43331,"515nm":36232,"555nm":9353,"590nm":6684,"630nm":9496,"680nm":8096}}
+
+Here is an example where we extract the Green channel at 515nm. 
+
+#+BEGIN_SRC sh 
+curl -s "http://claude2.cheme.local.cmu.edu:5000?R=0.12&G=0.45&B=1" | jq -M '.out."515nm"' 
+#+END_SRC
+
+#+RESULTS:
+: 32960
+
+Here is an example with Python. You can use this in a Jupyter notebook, for example.
+
+#+BEGIN_SRC python :results output
+import requests
+resp = requests.get('http://claude2.cheme.local.cmu.edu:5000',
+                    params={'R': 0.12, 'G':0.45, 'B': 1})
+print(resp.json())
+#+END_SRC
+
+#+RESULTS:
+: {'in': [0.12, 0.45, 1.0], 'out': {'415nm': 3500, '445nm': 65535, '480nm': 43256, '515nm': 36002, '555nm': 9352, '590nm': 6686, '630nm': 9488, '680nm': 8085}}
+
+** Some history of this project
+
+I bought two of the devices developed by Baird and Sparks. These are based on PicoW chips and meant to work on wifi. At my home they work great, but the wifi protocol supported is not well-suited to the wifi at CMU.
+
+I tried an Arduino with Arduino cloud. This worked ok for me, but I learned there is not a way to share the Arduino cloud dashboard with others unless they have an Arduino cloud account too. This also would need a Wifi solution that isn't easy.
+
+I got some Arduinos and Ethernet shields for my CMU office. This was going well until I learned I would probably have to write Arduino code to parse the URL for the query parameters. This is too easy in Python, and unfortunately the UNO boards do not run Micropython, so I abandoned this approach.
+
+I got a Raspberry Pi 5 because it has an ethernet port, and it supports full Python. However, The Pi5 made some changes to their GPIO code and hardware, and it is no longer compatible with Rpi.GPIO, so I was unable to use the GPIO for the RGB LED and make I2C measurements. It is possible there was a fix, but I didn't find it.
+
+Finally, I reverted to a Raspberry Pi 2 where finally everything worked fine. 
+
+I am planning for an upgrade to a Raspberry Pi 4 for the final version. 
+
+* Setting up Claude-light
+
 ** Register the MAC address
 
 At CMU it is necessary to do this so you can get an IP address.
@@ -31,10 +104,10 @@ go to interface options, then to I2C to enable it. I don't recall if a reboot is
 
 ** Setup and activate a virtual environment for Python
 
-I suggest you run this in ~/
+I suggest you run this in ~/. Note the --system-site-packages is important if you want to have the camera on.
 
 #+BEGIN_SRC sh
-python -m venv .venv
+python -m venv --system-site-packages .venv
 #+END_SRC
 
 I also recommend add this line to .bashrc so it loads when you login.
@@ -53,13 +126,12 @@ The package is only available on GitHUB. Install it like this.
 pip install git+git://github.com/jkitchin/claude-light
 #+END_SRC
 
-Alternatively
+Alternatively you can clone and install it locally.
 
 #+BEGIN_SRC sh
 git clone git@github.com:jkitchin/claude-light.git
 pip install -e claude-pi
 #+END_SRC
-
 
 I think this will install all the dependencies and it should also install a cli called ~claude~ that will start the app. Normally you would only run this on the Raspberry Pi.
 
@@ -73,9 +145,6 @@ It is a little tricky to kill the server. So far I use:
 pkill claude
 #+END_SRC
 
-
-I guess I am not too crazy about the requirements you need for the server and those for cl_light. They are independent, but for now I have them in the same package.
-
 ** Access the server
 
 This url is only available on CMU campus or with the CMU VPN:
@@ -83,3 +152,17 @@ This url is only available on CMU campus or with the CMU VPN:
 http://claude2.cheme.local.cmu.edu:5000/?R=0.4&G=0.5&B=0.9
 
 The R, G and B parameters can be between 0-1.
+
+** Roadmap
+
+*** Camera integration
+
+For the web form I would like to include a camera image in the response.
+
+*** RGB webform
+
+It might be nice to have a more interactive RGB form.
+
+*** A bluetooth version 
+
+Claude-light was built specifically for Internet accessibility. A totally local version would be interesting to learn how to build with Bluetooth and a phone bluetooth app.
