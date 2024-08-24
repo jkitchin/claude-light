@@ -153,6 +153,19 @@ def img():
     return f'<img src="data:image/png;base64, {b64}">'
 
 
+@app.route('/statistics')
+def stats():
+    """Return some results on usage."""
+    N = 0
+    ips = set()
+    with jsonlines.open(os.path.expanduser('~/results.jsonl')) as f:
+        for entry in f:
+            N += 1
+            ips.add(entry.get('ip', None))
+
+    return f'{N} experiments run by {len(ips)} users.'
+
+
 def run():
     """This is used to run the server."""
     from waitress import serve
