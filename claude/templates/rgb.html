@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <style>
+table, th, td {
+  border:1px solid black;
+  border-collapse: collapse;
+}
+</style>
+  <body>
+    <h1>RGB</h1>
+
+    Enter numbers between 0 to 1 in each input box. Press Enter/Return or the Measure button to start the experiment.
+    <br>
+    <br>
+    <form method="post">
+      Red: <input type="text" value={{ RGB[0] }} name="R"/>
+      Green: <input type="text" value={{ RGB[1] }} name="G"/>
+      Blue: <input type="text" value={{ RGB[2] }} name="B"/>
+      <button type="submit">Measure</button>
+      <br>
+      <br>
+      <h2>Results</h2>
+      You should be able to copy and paste this table into Excel.
+      <br>
+      <table style="width:33%">
+	<tr>
+	{% for key in keys %}
+	<th>{{ key }}</th>
+	{% endfor %}
+	</tr>
+	<tr>
+	{% for val in vals %}
+	<th>{{ val }}</th>
+	{% endfor %}
+	</tr>
+      </table>
+      <br>
+      <br>
+      Download: <a download="data.csv" href="data:text/csv;base64,{{ b64 }}" target=_"blank">Download csv file</a>
+    </form>
+
+    <br><br>
+
+    <img src="data:image/png;base64, {{ imgb64 }}">
+
+  </body>
+</html>
