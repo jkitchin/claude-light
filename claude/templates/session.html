@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <style>
+table, th, td {
+  border:1px solid black;
+  border-collapse: collapse;
+}
+</style>
+  <body>
+    <h1>session</h1>
+
+    Enter numbers between 0 to 1 in the input box. Press Enter/Return or the Measure button to start the experiment.
+    <br>
+    <br>
+    <form method="post">
+      Green: <input type="text" name="G"/>
+      <button type="submit">Measure</button>
+      <br>
+      <br>
+      <h2>Results</h2>
+      You should be able to copy and paste this table into Excel.
+      <table style="width:33%">
+	<tr><th>Input</th><th>Output</th></tr>
+	{% for row in session["ip"] %}
+	<tr><th>{{ row[0] }}</th><th>{{ row[1] }}</th></tr>
+	{% endfor %}
+      </table>
+    </form>
+
+    <br>
+    <br>
+    {% if b64 %}
+    Download: <a download="data.csv" href="data:text/csv;base64,{{ b64 }}" target=_"blank">Download csv file</a>
+    {% endif %}
+    
+    <br>
+    <br>
+    <a href="/clear_session">Clear results</a>
+    
+  </body>
+</html>

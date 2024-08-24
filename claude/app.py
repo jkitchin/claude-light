@@ -1,8 +1,6 @@
-#!/home/jkitchin/claude-light/.venv/bin/python
-
 import base64
 import os
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, session
 from gpiozero import RGBLED 
 import time
 import board
@@ -13,6 +11,9 @@ i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = AS7341(i2c)
 
 app = Flask(__name__)
+
+# TODO: replace with something secure!
+app.secret_key = b'claude-light'
 
 import io
 from picamera2 import Picamera2
@@ -135,7 +136,9 @@ def rgbmachine():
                                RGB=(R,G,B),
                                b64=b64)
     # this is from GET
-    return render_template("rgb.html",                           
+    return render_template("rgb.html",
+                           RGB=(0, 0, 0),
+                           imgb64=None,
                            data=())
 
 
@@ -144,13 +147,36 @@ def about():
     return render_template("about.html")
 
 
-@app.route('/img')
-def img():
-    pc.start()
-    data = io.BytesIO()
-    pc.capture_file(data, format='png')
-    b64 = base64.b64encode(data.getvalue()).decode('utf-8')
-    return f'<img src="data:image/png;base64, {b64}">'
+@app.route('/session', methods=['GET', 'POST'])
+def sesh():
+    """This is a form for browser use. It is not the most secure, and has none
+    of the WTFform protections. It is unclear how much that matters.
+    """
+    
+    if request.method == 'POST':
+
+        Gin = min(max(float(request.form['G'] or 0), 0.0), 1.0)
+        Gout = measure(0, Gin, 0)['out']['515nm']
+
+        if 'ip' in session:
+            session['ip'] += [[Gin, Gout]]
+        else:
+            session['ip'] =[[Gin, Gout]]
+
+        csv = '\n'.join([','.join([str(x) for x in row]) for row in session['ip']])
+        b64 = base64.b64encode(csv.encode('utf-8')).decode("utf8")
+
+        return render_template("session.html", b64=b64)
+
+    # this is from GET
+    return render_template("session.html", b64=None)
+
+@app.route('/clear_session')
+def clear_sesh():
+    del session['ip']
+    return render_template("session.html")
+
+
 
 
 @app.route('/statistics')

@@ -23,6 +23,7 @@ Claude light has only a few minor variations:
 - I use a Raspberry Pi instead of a PicoW because it has built in Ethernet port, and I find it easier to debug since I can ssh into it and it has a display port. The Pi also enables better logging.
 - I use float inputs from 0-1 instead of integers. In the program that runs it, floats are the inputs anyway, and the continuous inputs are easier to introduce in my opinion.
 - With the Rpi I can use the full Python language which I am more familiar with than MicroPython, and it has more functionality.
+- I integrated a camera into part of the interface so you can see what color the LED looks like in a measurement. This might one day lead to a computer vision application of claude-light.
 
 Claude-light is currently hosted at http://claude2.cheme.local.cmu.edu:5000 and it is only accessible on CMU campus or with CMU VPN.
 

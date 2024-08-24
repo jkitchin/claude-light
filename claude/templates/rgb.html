@@ -40,8 +40,8 @@ table, th, td {
     </form>
 
     <br><br>
-
-    <img src="data:image/png;base64, {{ imgb64 }}">
-
+    {% if imgb64 %}
+    <img src="data:image/png;base64, {{ imgb64 }}" style="transform: scaleY(-1);">
+    {% endif %}
   </body>
 </html>
