@@ -1,0 +1,14 @@
+[Unit]
+Description=Claude Light server
+
+[Service]		
+ExecStartPre=claude
+ExecStart=claude
+ExecReload=claude
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+RestartPreventExitStatus=255
+Type=notify
+RuntimeDirectory=claude
+RuntimeDirectoryMode=0755

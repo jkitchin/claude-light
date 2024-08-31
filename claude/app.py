@@ -1,11 +1,14 @@
 import base64
 import os
-from flask import Flask, request, render_template, session
+from flask import Flask, request, render_template, session, flash
 from gpiozero import RGBLED 
 import time
 import board
 from adafruit_as7341 import AS7341
 import jsonlines
+import matplotlib.pyplot as plt
+import datetime
+import pandas as pd
 
 i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = AS7341(i2c)
@@ -20,11 +23,12 @@ from picamera2 import Picamera2
 pc = Picamera2()
 
     
-def measure(R, G, B):
+def measure(R, G, B, origin=None):
     """Perform a measurement at the RGB settings. Returns a dictionary of data
     that includes the measurements, inputs, time, elapsed time and remote ip
     address.
 
+    origin is just a string indicating where the measure call came from.
     """
     t0 = time.time()
     led = RGBLED(red=19, green=18, blue=12)
@@ -52,7 +56,8 @@ def measure(R, G, B):
         d = results.copy()
         d.update({'t0': t0,
                   'elapsed_time': time.time() - t0,
-                  'ip': request.remote_addr})
+                  'ip': request.remote_addr,
+                  'origin': origin})
         f.write(d)
 
     return results
@@ -69,7 +74,7 @@ def rgb():
     B = float(request.args.get('B') or 0)
     B = min(max(B, 0.0), 1.0)
     
-    return measure(R, G, B)
+    return measure(R, G, B, origin='api')
 
 @app.route('/gm', methods=['GET', 'POST'])
 def greenmachine1():
@@ -78,9 +83,15 @@ def greenmachine1():
     """
     
     if request.method == 'POST':
-        Gs = [v.strip() or '0' for v in request.form['G'].split(',')]
-        Gin = [min(max(float(x), 0.0), 1.0) for x in Gs]
-        Gout = [measure(0, x, 0)['out']['515nm'] for x in Gin]
+        try:
+            Gs = [v.strip() or '0' for v in request.form['G'].split(',')]
+            Gin = [min(max(float(x), 0.0), 1.0) for x in Gs]
+        except ValueError:
+            flash('There was an error parsing your input. Try again. Make sure they are proper floats separated by commas.')
+            return render_template("green-machine1.html",                           
+                                   data=())
+        
+        Gout = [measure(0, x, 0, origin='greenmachine1')['out']['515nm'] for x in Gin]
 
         output = list(zip(Gin, Gout))
         csv = '\n'.join([','.join([str(x) for x in row]) for row in output])
@@ -105,7 +116,7 @@ def rgbmachine():
         G = min(max(float(request.form['G'] or 0), 0.0), 1.0)
         B = min(max(float(request.form['B'] or 0), 0.0), 1.0)
 
-        out = measure(R, G, B)['out']
+        out = measure(R, G, B, origin='rgb')['out']
         keys = ['R', 'G', 'B'] + list(out.keys())
         vals = [R, G, B] + list(out.values())
         
@@ -156,7 +167,7 @@ def sesh():
     if request.method == 'POST':
 
         Gin = min(max(float(request.form['G'] or 0), 0.0), 1.0)
-        Gout = measure(0, Gin, 0)['out']['515nm']
+        Gout = measure(0, Gin, 0, origin='session')['out']['515nm']
 
         if 'ip' in session:
             session['ip'] += [[Gin, Gout]]
@@ -184,12 +195,53 @@ def stats():
     """Return some results on usage."""
     N = 0
     ips = set()
+
+    timestamps = []
+    elapsed_times = []
     with jsonlines.open(os.path.expanduser('~/results.jsonl')) as f:
         for entry in f:
             N += 1
             ips.add(entry.get('ip', None))
+            timestamps += [datetime.datetime.fromtimestamp(entry['t0'])]
+            elapsed_times += [entry['elapsed_time']]
 
-    return f'{N} experiments run by {len(ips)} users.'
+    img = io.BytesIO()
+    plt.plot(timestamps, elapsed_times, 'b.')
+    plt.xlabel('time')
+    plt.ylabel('Elapsed measurement time (sec)')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(img, format='png')
+    imgb64 = base64.b64encode(img.getvalue()).decode('utf-8')
+    plt.close()
+
+    counts = {}
+    for ts in timestamps:
+        m = (ts.year, ts.month, ts.day)
+        if m in counts:
+            counts[m] += 1
+        else:
+            counts[m] = 1
+
+    plt.plot([datetime.datetime(*ts) for ts in counts],
+             counts.values())
+    plt.ylim([0, max(counts.values())])
+    plt.xlabel('date')
+    plt.ylabel('count')
+    img = io.BytesIO()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(img, format='png')
+    plt.close()
+    img2b64 = base64.b64encode(img.getvalue()).decode('utf-8')
+
+    return f'''<html><body>{N} experiments run by {len(ips)} users.<br><br>
+    <img src="data:image/png;base64, {imgb64}">
+    <br>
+    <br>
+    <img src="data:image/png;base64, {img2b64}">
+
+    </body></html>'''
 
 
 def run():

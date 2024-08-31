@@ -12,7 +12,9 @@ dependencies = [
 	     "lgpio",
 	     "gpiozero",
 	     "flask",
-	     "jsonlines"]
+	     "jsonlines",
+	     "matplotlib",
+	     "pandas"]
 license = {text = "MIT"}
 dynamic = ["version"]
 

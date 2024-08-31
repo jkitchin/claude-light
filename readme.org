@@ -85,9 +85,7 @@ At CMU it is necessary to do this so you can get an IP address.
 
 ** Setup the Raspberry Pi
 
-This is mostly a one time setup on a new pi.
-
-I recommend running all the updates. You may want to run raspi-config to update first.
+This is mostly a one time setup on a new Pi. You have to specify a username and password in this process. I recommend running all the updates. You may want to run raspi-config to update it first.
 
 #+BEGIN_SRC sh
 sudo apt update && apt full-upgrade && apt clean
@@ -95,13 +93,13 @@ sudo apt update && apt full-upgrade && apt clean
 
 Maybe this should be done weekly? You can find a script for this at [[./update-pi.sh]].
 
-You have to enable the I2C interface in raspi-config
+You have to enable the I2C interface in raspi-config.
 
 #+BEGIN_SRC sh
 sudo raspi-config
 #+END_SRC
 
-go to interface options, then to I2C to enable it. I don't recall if a reboot is necessary.
+Go to interface options, then to I2C to enable it. I don't recall if a reboot is necessary. If you want to be able to ssh into your Pi, you should also enable ssh in raspi-config.
 
 ** Setup and activate a virtual environment for Python
 
@@ -144,6 +142,47 @@ It is a little tricky to kill the server. So far I use:
 
 #+BEGIN_SRC sh
 pkill claude
+#+END_SRC
+
+** Setup claude as a service
+
+It is desirable to setup the Pi so that claude automatically runs when the Pi starts up, and is easy to restart. The best way to do this is with systemd. We have to create a file like this in /etc/systemd/system called claude.service with these contents. You should adapt this file to use the username on the Pi where claude is installed.
+
+#+BEGIN_SRC text :tangle /etc/systemd/system/claude.service
+[Unit]                                               
+Description=Claude Light server
+		                                               
+[Service]                                          
+Type=simple                                       
+Restart=always                                         
+RestartSec=1                                        
+User=jkitchin                                
+ExecStart=/home/jkitchin/.venv/bin/claude                           
+ExecStop=pkill claude
+	                         
+[Install]
+WantedBy=multi-user.target  
+#+END_SRC
+
+Then, load and enable the service.
+
+#+BEGIN_SRC sh
+sudo systemctl daemon-reload
+sudo systemctl enable claude.service
+#+END_SRC
+
+This should result in claude starting on bootup, and if it dies, systemd will try to restart it. You can also stop, start, and restart the service.
+
+#+BEGIN_SRC sh
+sudo systemctl start claude.service
+sudo systemctl stop claude.service
+sudo systemctl restart claude.service
+#+END_SRC
+
+You can also see the status.
+
+#+BEGIN_SRC sh
+sudo systemctl status claude.service
 #+END_SRC
 
 ** Access the server
