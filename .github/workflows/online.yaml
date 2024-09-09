@@ -3,7 +3,7 @@ name: Claude light hardware
 on:
   workflow_dispatch:
   schedule:
-    - cron: '59 23 * * *'  # daily at 11:59pm
+    - cron: '59 7 * * *'  # daily at 7:59am
 
 jobs:
   test:
