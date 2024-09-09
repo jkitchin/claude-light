@@ -1,0 +1,13 @@
+name: Claude light hardware
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '59 23 * * *'  # daily at 11:59pm
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      -run: |
+          curl "http://claude-light.cheme.cmu.edu:5000/api?R=0.12&G=0.45&B=1" 
