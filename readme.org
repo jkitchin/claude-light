@@ -1,11 +1,89 @@
 #+title: Claude light
 #+author: John Kitchin
-#+MACRO: 
+
 This repository contains the app code to run a claude-light server and to interact with it through Python.
+
+* Usage
+
+The instrument is hosted at http://claude-light.cheme.cmu.edu:5000. That url brings you to this page (which is hosted on GitHUB).
+
+See [[*Parts list]] for details on the instrument hardware.
+
+
+** The Green machine
+
+The entry level instrument is hosted at:
+http://claude-light.cheme.cmu.edu:5000/gm
+
+Here you will see a web-form where you can enter the Green LED level, and get a measurement of the 515nm light level, and a picture of the LED during the measurement.
+
+There is only one input, and one output in this machine. 
+
+*** Recommended exercises
+
+Here are some exercises you could try:
+
+1. How reproducible is a particular setting? Try running the same experiment many times. Record each result. Make a histogram of the results, and compute statistics like the mean and standard deviation.
+2. How does your measurement change during the day? The color sensor is exposed to ambient light which changes throughout the day. Experiment with measuring the background with G=0 and subtracting that from your data.
+3. How does the output depend on the input setting? Run experiments at a variety of green levels and plot how the output depends on those levels. It should look approximately linear. Try fitting a line to the data.
+4. Find the input setting that yields an output of 25000 (or other value of your choice).
+
+** The RGB machine
+
+The RGB machine has three inputs. You can access it at
+http://claude-light.cheme.cmu.edu:5000/rgb
+
+The output includes 8 wavelengths of light, and two additional outputs for the total intensity (clear) and near-IR (nir), as well as a picture of the LED during the experiment.
+
+*** Recommended exercises
+
+1. Reproducibility across the output channels. Repeat a measurement many times, and copy the data into a spreadsheet. Compute the mean and standard deviations for each channel and compare the results.
+
+** The API endpoint
+
+The API endpoint is intended for scripting. You can access it at http://claude-light.cheme.cmu.edu:5000/api. 
+
+This returns simple json with input and output. You can pass R, B and B levels as url params, e.g.
+
+http://claude-light.cheme.cmu.edu:5000/api?R=0.1&G=0.3&B=0.2
+
+
+Here is an API example with curl. You could process this by using jq in a shell if desired.
+
+#+BEGIN_SRC sh :results output
+curl "http://claude-light.cheme.cmu.edu:5000/api?R=0.12&G=0.45&B=1" 
+#+END_SRC
+
+#+RESULTS:
+: {"in":[0.12,0.45,1.0],"out":{"415nm":2483,"445nm":31854,"480nm":15715,"515nm":31083,"555nm":9082,"590nm":7059,"630nm":10611,"680nm":4844,"clear":65535,"nir":13854}}
+
+Here is an example where we extract the Green channel at 515nm. 
+
+#+BEGIN_SRC sh 
+curl -s "http://claude-light.cheme.cmu.edu:5000/api?R=0.12&G=0.45&B=1" | jq -M '.out."515nm"' 
+#+END_SRC
+
+#+RESULTS:
+: 31215
+
+Here is an example with Python. You can use this in a Jupyter notebook, for example.
+
+#+BEGIN_SRC python :results output
+import requests
+resp = requests.get('http://claude-light.cheme.cmu.edu:5000/api',
+                    params={'R': 0.12, 'G':0.45, 'B': 1})
+print(resp.json())
+#+END_SRC
+
+#+RESULTS:
+: {'in': [0.12, 0.45, 1.0], 'out': {'415nm': 2500, '445nm': 31871, '480nm': 15816, '515nm': 31510, '555nm': 9174, '590nm': 7187, '630nm': 10831, '680nm': 4912, 'clear': 65535, 'nir': 13986}}
+
+** TODO The Python interface
+
 
 * About
 
-Claude Light is a simple instrument inspired by the work by Sterling Baird and Taylor Sparks in these papers:
+Claude Light is a simple instrument inspired by the work of Sterling Baird and Taylor Sparks in these papers:
 
 - Baird, S. G., & Sparks, T. D. (2022). What is a minimal working example for a
   self-driving laboratory? Matter, 5(12), 4170–4178.
@@ -19,55 +97,18 @@ Claude Light is a simple instrument inspired by the work by Sterling Baird and T
 Claude light has only a few minor variations:
 
 - I use a REST API instead of MQTT because it is easier to develop. Specifically, by using flask we can provide a variety of interfaces at different levels of sophistication including a browser interface and API access.
-- I use an ethernet cable because the wifi at school is too secure to connect a PicoW
+- I use an ethernet cable because the wifi at school is too secure to connect a PicoW and wired so far is more reliable
 - I use a Raspberry Pi instead of a PicoW because it has built in Ethernet port, and I find it easier to debug since I can ssh into it and it has a display port. The Pi also enables better logging.
 - I use float inputs from 0-1 instead of integers. In the program that runs it, floats are the inputs anyway, and the continuous inputs are easier to introduce in my opinion.
-- With the Rpi I can use the full Python language which I am more familiar with than MicroPython, and it has more functionality.
+- With the RPi I can use the full Python language which I am more familiar with than MicroPython, and it has more functionality.
 - I integrated a camera into part of the interface so you can see what color the LED looks like in a measurement. This might one day lead to a computer vision application of claude-light.
 
-Claude-light is currently hosted at http://claude2.cheme.local.cmu.edu:5000 and it is only accessible on CMU campus or with CMU VPN.
-
-There are two ways to interact with Claude light. First, in your browser visit 
-http://claude2.cheme.local.cmu.edu:5000/gm to see a simple web form where you can enter numbers for the level of green light to measure, and then get a tabular data you can copy and paste or download.
-
-The second way is by URL or http request. For example you can visit
-http://claude2.cheme.local.cmu.edu:5000?R=0.12&G=0.45&B=1 in a browser, with curl in a shell or by using the Python requests package and you will get a json packet back with the results from that RGB setting. The instrument returns 8 different wavelengths of visible light.
-
-Here is an API example with curl. You could process this by using jq in a shell if desired.
-
-#+BEGIN_SRC sh :results output
-curl "http://claude2.cheme.local.cmu.edu:5000?R=0.12&G=0.45&B=1" 
-#+END_SRC
-
-#+RESULTS:
-: {"in":[0.12,0.45,1.0],"out":{"415nm":3513,"445nm":65535,"480nm":43331,"515nm":36232,"555nm":9353,"590nm":6684,"630nm":9496,"680nm":8096}}
-
-Here is an example where we extract the Green channel at 515nm. 
-
-#+BEGIN_SRC sh 
-curl -s "http://claude2.cheme.local.cmu.edu:5000?R=0.12&G=0.45&B=1" | jq -M '.out."515nm"' 
-#+END_SRC
-
-#+RESULTS:
-: 32960
-
-Here is an example with Python. You can use this in a Jupyter notebook, for example.
-
-#+BEGIN_SRC python :results output
-import requests
-resp = requests.get('http://claude2.cheme.local.cmu.edu:5000',
-                    params={'R': 0.12, 'G':0.45, 'B': 1})
-print(resp.json())
-#+END_SRC
-
-#+RESULTS:
-: {'in': [0.12, 0.45, 1.0], 'out': {'415nm': 3500, '445nm': 65535, '480nm': 43256, '515nm': 36002, '555nm': 9352, '590nm': 6686, '630nm': 9488, '680nm': 8085}}
 
 ** Some history of this project
 
 I bought two of the devices developed by Baird and Sparks. These are based on PicoW chips and meant to work on wifi. At my home they work great, but the wifi protocol supported is not well-suited to the wifi at CMU.
 
-I tried an Arduino with Arduino cloud. This worked ok for me, but I learned there is not a way to share the Arduino cloud dashboard with others unless they have an Arduino cloud account too. This also would need a Wifi solution that isn't easy.
+I tried an Arduino with Arduino Cloud. This worked ok for me, but I learned there is not a way to share the Arduino cloud dashboard with others unless they have an Arduino cloud account too. This also would need a Wifi solution that isn't easy.
 
 I got some Arduinos and Ethernet shields for my CMU office. This was going well until I learned I would probably have to write Arduino code to parse the URL for the query parameters. This is too easy in Python, and unfortunately the UNO boards do not run Micropython, so I abandoned this approach.
 
@@ -76,6 +117,26 @@ I got a Raspberry Pi 5 because it has an ethernet port, and it supports full Pyt
 Finally, I reverted to a Raspberry Pi 2 where finally everything worked fine. 
 
 I am planning for an upgrade to a Raspberry Pi 4 for the final version. 
+
+* Parts list
+
+In the end there is not that much to this device.
+
+- Raspberry Pi 4 (8GB) https://www.adafruit.com/product/4564
+- aluminum metal heat sink with dual fans https://www.adafruit.com/product/4340
+- 64GB SD card
+- AS7341 color sensor https://www.adafruit.com/product/4698
+- RGB LED Module https://www.amazon.com/dp/B0BXKMGSG6
+- tall 40 pin extender https://www.adafruit.com/product/1979
+- prototype circuit board (small board from https://www.amazon.com/dp/B07NM68FXK)
+- Arducam Motorized Focus Pi Camera (https://www.amazon.com/dp/B07SN8GYGD)
+
+You need some wires and soldering tools to put it all together.
+
+All together it looks like this:
+
+[[./claude-air.png]]
+
 
 * Setting up Claude-light
 
@@ -93,13 +154,13 @@ sudo apt update && apt full-upgrade && apt clean
 
 Maybe this should be done weekly? You can find a script for this at [[./update-pi.sh]].
 
-You have to enable the I2C interface in raspi-config.
+You have to enable the I2C interface in raspi-config. I also enable ssh.
 
 #+BEGIN_SRC sh
 sudo raspi-config
 #+END_SRC
 
-Go to interface options, then to I2C to enable it. I don't recall if a reboot is necessary. If you want to be able to ssh into your Pi, you should also enable ssh in raspi-config.
+Go to interface options, then to I2C to enable it. 
 
 ** Setup and activate a virtual environment for Python
 
@@ -164,7 +225,7 @@ ExecStop=pkill claude
 WantedBy=multi-user.target  
 #+END_SRC
 
-Then, load and enable the service.
+I use this script to setup, load and enable the service  [[./setup-service.sh]].
 
 #+BEGIN_SRC sh
 sudo systemctl daemon-reload
@@ -185,24 +246,16 @@ You can also see the status.
 sudo systemctl status claude.service
 #+END_SRC
 
-** Access the server
-
-This url is only available on CMU campus or with the CMU VPN:
-
-http://claude2.cheme.local.cmu.edu:5000/?R=0.4&G=0.5&B=0.9
-
-The R, G and B parameters can be between 0-1.
 
 ** Roadmap
+*** TODO https - secure http
 
-*** Camera integration
+*** TODO An MQTT version
 
-For the web form I would like to include a camera image in the response.
-
-*** RGB webform
-
-It might be nice to have a more interactive RGB form.
-
-*** A bluetooth version 
+*** TODO A bluetooth version 
 
 Claude-light was built specifically for Internet accessibility. A totally local version would be interesting to learn how to build with Bluetooth and a phone bluetooth app.
+
+*** Better camera mount
+
+The camera is somewhat floppy at the moment. It could use a better mount. It is a little tricky to figure out what the best thing to do is though. Maybe a 3-d printed case? or something stiffer that can be bolted down to the PCB.

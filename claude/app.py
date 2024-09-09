@@ -1,6 +1,6 @@
 import base64
 import os
-from flask import Flask, request, render_template, session, flash
+from flask import Flask, request, render_template, session, flash, redirect
 from gpiozero import RGBLED 
 import time
 import board
@@ -61,9 +61,15 @@ def measure(R, G, B, origin=None):
         f.write(d)
 
     return results
-    
+
+
 @app.route('/')
-def rgb():
+def home():
+    return redirect('https://github.com/jkitchin/claude-light?tab=readme-ov-file#Usage', code=302)
+
+
+@app.route('/api')
+def api():
     
     R = float(request.args.get('R') or 0)
     R = min(max(R, 0.0), 1.0)
@@ -96,12 +102,20 @@ def greenmachine1():
         output = list(zip(Gin, Gout))
         csv = '\n'.join([','.join([str(x) for x in row]) for row in output])
         b64 = base64.b64encode(csv.encode('utf-8')).decode("utf8")
+
+        pc.start()
+        data = io.BytesIO()
+        pc.capture_file(data, format='png')
+        imgb64 = base64.b64encode(data.getvalue()).decode('utf-8')
+
         
         return render_template("green-machine1.html",
                                data=output,
+                               imgb64=imgb64,
                                b64=b64)
     # this is from GET
-    return render_template("green-machine1.html",                           
+    return render_template("green-machine1.html",
+                           imgb64=None,
                            data=())
 
 

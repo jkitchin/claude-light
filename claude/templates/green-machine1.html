@@ -38,5 +38,9 @@ table, th, td {
       Download: <a download="data.csv" href="data:text/csv;base64,{{ b64 }}" target=_"blank">Download csv file</a>
     </form>
 
+    <br><br>
+    {% if imgb64 %}
+    <img src="data:image/png;base64, {{ imgb64 }}" style="transform: scaleY(-1);">
+    {% endif %}
   </body>
 </html>
