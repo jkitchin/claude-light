@@ -31,7 +31,7 @@ def measure(R, G, B, origin=None):
     origin is just a string indicating where the measure call came from.
     """
     t0 = time.time()
-    led = RGBLED(red=19, green=18, blue=12)
+    led = RGBLED(red=19, green=13, blue=12)
     led.color = (R, G, B)
     
     data = list(sensor.all_channels) + [sensor.channel_clear, sensor.channel_nir]

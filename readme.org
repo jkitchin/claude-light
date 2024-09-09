@@ -148,7 +148,7 @@ pkill claude
 
 It is desirable to setup the Pi so that claude automatically runs when the Pi starts up, and is easy to restart. The best way to do this is with systemd. We have to create a file like this in /etc/systemd/system called claude.service with these contents. You should adapt this file to use the username on the Pi where claude is installed.
 
-#+BEGIN_SRC text :tangle /etc/systemd/system/claude.service
+#+BEGIN_SRC text :tangle claude.service
 [Unit]                                               
 Description=Claude Light server
 		                                               
