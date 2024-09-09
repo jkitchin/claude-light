@@ -3,12 +3,17 @@
 
 This repository contains the app code to run a claude-light server and to interact with it through Python.
 
+#+BEGIN_HTML
+<a href="https://github.com/jkitchin/claude-light/actions/workflows/online.yaml"><img src="https://github.com/jkitchin/claude-light/actions/workflows/online.yaml/badge.svg"></a>
+#+END_HTML
+
 * Usage
 
-The instrument is hosted at http://claude-light.cheme.cmu.edu:5000. That url brings you to this page (which is hosted on GitHUB).
+Welcome to Claude-Light! You can use this instrument to learn about running remote experiments, analyzing data, automation, design of experiments, and more.
 
-See [[*Parts list]] for details on the instrument hardware.
+The instrument is hosted at http://claude-light.cheme.cmu.edu:5000. That url brings you to this page (which is hosted on GitHUB). See [[*Parts list]] for details on the instrument hardware.
 
+The following sections describe several ways you can interact with Claude Light.
 
 ** The Green machine
 
@@ -17,7 +22,7 @@ http://claude-light.cheme.cmu.edu:5000/gm
 
 Here you will see a web-form where you can enter the Green LED level, and get a measurement of the 515nm light level, and a picture of the LED during the measurement.
 
-There is only one input, and one output in this machine. 
+There is only one input, and one output in this machine. This instrument can be used to illustrate reproducibility and statistics, linear regression, optimization and design of experiments.
 
 *** Recommended exercises
 
@@ -38,6 +43,7 @@ The output includes 8 wavelengths of light, and two additional outputs for the t
 *** Recommended exercises
 
 1. Reproducibility across the output channels. Repeat a measurement many times, and copy the data into a spreadsheet. Compute the mean and standard deviations for each channel and compare the results.
+2. Vary one input, and plot how the outputs depend on it. 
 
 ** The API endpoint
 
@@ -78,8 +84,14 @@ print(resp.json())
 #+RESULTS:
 : {'in': [0.12, 0.45, 1.0], 'out': {'415nm': 2500, '445nm': 31871, '480nm': 15816, '515nm': 31510, '555nm': 9174, '590nm': 7187, '630nm': 10831, '680nm': 4912, 'clear': 65535, 'nir': 13986}}
 
-** TODO The Python interface
+*** Recommended exercises
 
+1. Write a Python script that loops over a range of input values. Save the output in each iteration. Make a plot showing how the output depends on the inputs.
+2. Write a Python script to repeat a measurement many times. Accumulate the results. Plot a histogram of the results, and compute some statistical properties of them.
+
+** The Python interface
+
+See https://github.com/jkitchin/claude-light-python for a Python package you can install to control and automate Claude.
 
 * About
 
