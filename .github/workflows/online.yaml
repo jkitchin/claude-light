@@ -9,5 +9,5 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      -run: |
+      - run: |
           curl "http://claude-light.cheme.cmu.edu:5000/api?R=0.12&G=0.45&B=1" 
