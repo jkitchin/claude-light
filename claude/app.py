@@ -1,6 +1,6 @@
 import base64
 import os
-from flask import Flask, request, render_template, session, flash, redirect
+from flask import Flask, request, render_template, session, flash, redirect, make_response
 from gpiozero import RGBLED 
 import time
 import board
@@ -9,6 +9,7 @@ import jsonlines
 import matplotlib.pyplot as plt
 import datetime
 import pandas as pd
+from retry import retry
 
 i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = AS7341(i2c)
@@ -22,7 +23,12 @@ import io
 from picamera2 import Picamera2
 pc = Picamera2()
 
-    
+# It seems like there could be some issues with concurrent requests that come
+# too fast, resulting in GPIO busy errors. I only see this in Google sheets so
+# far, where it seems all the requests come in at once. This adds a retry
+# option. The numbers are all heuristic. I put a "largish" number of retries to
+# avoid a potential infinite loop.
+@retry(tries=10, delay=1)    
 def measure(R, G, B, origin=None):
     """Perform a measurement at the RGB settings. Returns a dictionary of data
     that includes the measurements, inputs, time, elapsed time and remote ip
@@ -31,6 +37,7 @@ def measure(R, G, B, origin=None):
     origin is just a string indicating where the measure call came from.
     """
     t0 = time.time()
+    
     led = RGBLED(red=19, green=13, blue=12)
     led.color = (R, G, B)
     
@@ -81,6 +88,20 @@ def api():
     B = min(max(B, 0.0), 1.0)
     
     return measure(R, G, B, origin='api')
+
+@app.route('/csv', methods=['GET', 'POST'])
+def csv(G=0):
+    """Return the 515nm result as a number.
+    This function is for use in Google sheets.
+    """
+    
+    G = float(request.args.get('G', 0))
+
+    result = measure(0, G, 0)['out']['515nm']
+    time.sleep(1)
+    resp = make_response(str(result))
+    resp.mimetype='text/csv'
+    return resp
 
 @app.route('/gm', methods=['GET', 'POST'])
 def greenmachine1():
