@@ -8,6 +8,8 @@ table, th, td {
 </style>
   <body>
     <h1>Green Machine #1</h1>
+    See <a href="https://github.com/jkitchin/claude-light?tab=readme-ov-file#the-green-machine">https://github.com/jkitchin/claude-light?tab=readme-ov-file#the-green-machine</a> for suggested exercises. <br><br>
+    
 {% with messages = get_flashed_messages() %}
   {% if messages %}
     <ul class=flashes>
@@ -16,7 +18,8 @@ table, th, td {
     {% endfor %}
     </ul>
   {% endif %}
-{% endwith %}
+    {% endwith %}
+    
     Enter numbers between 0 to 1 in the input box. Separate the numbers by commas. For example, 0, 0.1, 0.2. Press Enter/Return or the Measure button to start the experiment.
     <br>
     <br>
@@ -42,5 +45,8 @@ table, th, td {
     {% if imgb64 %}
     <img src="data:image/png;base64, {{ imgb64 }}" style="transform: scaleY(-1);">
     {% endif %}
+
+    <br><br>
+    Please report issues at <a href="https://github.com/jkitchin/claude-light/issues">https://github.com/jkitchin/claude-light/issues</a>.
   </body>
 </html>
