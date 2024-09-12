@@ -274,6 +274,10 @@ sudo systemctl status claude.service
 
 Claude-light was built specifically for Internet accessibility. A totally local version would be interesting to learn how to build with Bluetooth and a phone bluetooth app.
 
+*** TODO wifi
+
+It is probably a good idea to see if we can get a wifi capability.
+
 *** TODO add instrument parameters to API
 
 There are some features in the sensor library we don't use, e.g. flicker-detection https://docs.circuitpython.org/projects/as7341/en/latest/examples.html#flicker-detection, and some things like atime and gain (https://docs.circuitpython.org/projects/as7341/en/latest/api.html#adafruit_as7341.Gain) that could affect measurements.
