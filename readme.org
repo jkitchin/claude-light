@@ -90,6 +90,10 @@ print(resp.json())
 
 See https://github.com/jkitchin/claude-light-python for a Python package you can install to control and automate Claude.
 
+** Suggested exercises
+
+You can find more exercises at [[./exercises.org]].
+
 * About
 
 Claude Light is a simple instrument inspired by the work of Sterling Baird and Taylor Sparks in these papers:
