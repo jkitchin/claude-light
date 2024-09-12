@@ -270,6 +270,12 @@ sudo systemctl status claude.service
 
 Claude-light was built specifically for Internet accessibility. A totally local version would be interesting to learn how to build with Bluetooth and a phone bluetooth app.
 
+*** TODO add instrument parameters to API
+
+There are some features in the sensor library we don't use, e.g. flicker-detection https://docs.circuitpython.org/projects/as7341/en/latest/examples.html#flicker-detection, and some things like atime and gain (https://docs.circuitpython.org/projects/as7341/en/latest/api.html#adafruit_as7341.Gain) that could affect measurements.
+
+We could add these to an api to affect how the measurements are made.
+
 *** Better camera mount
 
 The camera is somewhat floppy at the moment. It could use a better mount. It is a little tricky to figure out what the best thing to do is though. Maybe a 3-d printed case? or something stiffer that can be bolted down to the PCB.
