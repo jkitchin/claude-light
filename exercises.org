@@ -1,0 +1,164 @@
+#+title: Exercises with Claude-Light
+
+* Statistics
+
+** mean, median, mode, stdev
+
+Make a set of repeated measurements. Compute the mean, median, mode and standard deviation of your measurements. See how they depend on the number of measurements you make. Do they converge?
+
+Make a histogram of your measurements. Fit a normal distribution to them and assess whether your measurements are normally distributed.
+
+See if the statistics vary for different settings, e.g. is the variation in the background different than at low or high input settings?
+
+** quantiles
+
+Compute quantiles for a set of data. See how they converge with the number of measurements.
+
+** are measurements different
+
+Make two sets of measurements. Use an f-test to determine if they are statistically different.
+
+Determine the smallest change in the input that leads to a statistically different output. Make two sets of measurements that are separated by that change and examine histograms of each set.
+
+** detection limit
+
+What is the smallest detectable input? Find the smallest input that is statistically different from the measurement at 0 (the background). This could vary throughout the day. 
+
+* Exploratory data
+
+Plot the output as a function of the input over the whole data range of (0, 1) for each input channel.
+
+* Interpolation
+
+Vary one input and measure one input, e.g. use http://claude-light.cheme.cmu.edu:5000/gm. Use the data build an interpolator. Use the interpolator to predict the output at a new input value. Run an experiment to see how good the prediction is.
+
+Use the interpolator to compute an input that will give a desired output.
+
+* Linear Regression
+
+Vary one input and measure one input, e.g. use http://claude-light.cheme.cmu.edu:5000/gm. Use the data to fit a line.
+
+Compute metrics like the RMSE, MAE and R^2 for the fit. Plot the data with the fit.
+
+Use your model to predict the input value that will have an output of 25000. Perform an experiment at that value to see how good the prediction is.
+
+* Multivariate Regression
+
+Vary 2 or 3 inputs, and measure one input, e.g. use http://claude-light.cheme.cmu.edu:5000/rgb. Use the data to fit a linear model.
+
+Vary 2 or 3 inputs, and measure multiple inputs, e.g. use http://claude-light.cheme.cmu.edu:5000/rgb. Use the data to fit a linear model to all the outputs.
+
+Use your model to find input settings that lead to a 515nm value of 25000, and 630nm of 25000.
+
+* Uncertainty quantification
+
+Determine the uncertainty of the parameters from the linear regression models. 
+
+Determine the uncertainty of the predictions from the linear regression models.
+
+Repeat these analyses for different numbers of samples, e.g. 3-30 data points. Determine how the uncertainty varies with the number of points.
+
+Repeat these analyses for repetitions of a fixed number of samples, e.g. fit a line to each of 10 sets of 5 measurements (so you have 10 fits). Examine the distribution of parameters and uncertainties.
+
+* Machine learning
+
+** sklearn
+
+Use models from sklearn to fit data from one of the previous examples:
+
+- LinearRegressor, including a variety of regularizers
+- MLPRegressor
+- GaussianProcessRegressor
+- RandomForestRegressor
+
+Try using Polynomial features, and scaling. Build a pipeline with these. 
+
+Use the model to find inputs to give a desired output.
+
+** xgboost
+
+Build a model with https://xgboost.readthedocs.io/en/stable/.
+
+** linear decision trees
+
+Build a model with https://github.com/cerlymarco/linear-tree
+
+* Active learning
+
+** scikit.optimize
+
+Use https://scikit-optimize.github.io/stable/ to find a set of inputs that have a desired output, e.g. 515nm = 25000 and 630nm=25000.
+
+** Bayesian optimization
+
+Use a Bayesian optimization framework for active learning.
+
+** Roll your own
+
+Build your own active learning approach. This might be using sklearn.optimize functions, or something more sophisticated.
+
+* Design of experiments
+** Tradeoffs in designs
+
+Compare the following designs for computing the slope of a line with 10 data points.
+
+1. 10 evenly spaced lines from G=0.1 to G=0.8
+2. 5 points at G=0.1 and 5 points at G=0.8
+
+In both cases compute the parameters for a line that fits the data and the uncertainty in the parameters.
+
+** pycse.sklearn.lhc
+
+Perform a latin hypercube design of experiment with claude-light.
+
+https://github.com/jkitchin/pycse/blob/master/pycse/sklearn/lhc.py
+
+** pycse.sklearn.surface_response
+
+Perform a surface response design of experiment with claude-light.
+
+https://github.com/jkitchin/pycse/blob/master/pycse/sklearn/surface_response.py
+
+* Measurement design
+
+The instrument simply provides a measurement. It does not do any averaging, nor background subtraction. That means the measurements will fluctuate throughout the day.
+
+** Background subtraction
+
+Write a function that acquires a background and subtracts it from the measurement of interest. 
+
+Make measurements over time to see if they are more consistent.
+
+** Averaging to reduce noise
+
+Sometimes you can reduce noise by averaging many measurements. Plot the average as a function of number of measurements. Write a function that makes multiple measurements and returns an average of those measurements.
+
+* Automation
+
+** Temporal variations
+
+Write a script that makes a measurement at a regular interval, ideally over a period of 24 hours. Plot the measurement as a function of time.
+
+** Workflow
+
+Use a workflow tool like joblib, parsl, covalent, etc. to build a workflow for making measurements.
+
+* Data
+
+** Cache
+
+Use a tool like pycse.hashcache or joblib to persistently cache your experiment results. Perform a set of experiments. Come back a day or two later and see how easy it is to reuse the data.
+
+** Local Database
+
+Write a function that saves your data to a database. I suggest you start with sqlite. You could also look into Python libraries like shelve, pickle, dill, etc. You could also write to a file, e.g. csv, json, jsonlines, numpy, etc.
+
+Come back to your database in a few days, and see how easy it is to extract and reuse data from the database.
+
+** Database server
+
+This is an advanced exercise. You need to be able to setup a server, e.g. MongoDB or postgresql, or you have to setup a cloud server. Either way you set up accounts and permissions, and then you can write results to it.
+
+After you have written results, query the database for some results.
+
+You can sign up for a free MongoDB database in the cloud at https://www.mongodb.com/cloud/atlas/register.
