@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import datetime
 import pandas as pd
 from retry import retry
+import requests
 
 i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = AS7341(i2c)
@@ -270,13 +271,23 @@ def stats():
     plt.close()
     img2b64 = base64.b64encode(img.getvalue()).decode('utf-8')
 
-    return f'''<html><body>{N} experiments run by {len(ips)} users.<br><br>
+    ips = list(set(ips))
+    req = requests.post('https://ipinfo.io/tools/summarize-ips?cli=1',
+                    data={'ips': ips})
+
+    
+
+    return f'''<html><body>
+    {N} experiments run by {len(ips)} users. <a href="{req.json()['reportUrl']}">Map of IP addresses</a>
+    <br>
+    <br>
     <img src="data:image/png;base64, {imgb64}">
     <br>
     <br>
     <img src="data:image/png;base64, {img2b64}">
 
-    </body></html>'''
+    </body>
+    </html>'''
 
 
 def run():
