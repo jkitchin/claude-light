@@ -14,7 +14,7 @@ Welcome to Claude-Light! You can use this instrument to learn about running remo
 ** The Green machine
 
 The entry level instrument is hosted at:
-http://claude-light.cheme.cmu.edu:5000/gm
+http://claude-light.cheme.cmu.edu/gm
 
 Here you will see a web-form where you can enter the Green LED level, and get a measurement of the 515nm light level, and a picture of the LED during the measurement.
 
@@ -32,7 +32,7 @@ Here are some exercises you could try:
 ** The RGB machine
 
 The RGB machine has three inputs. You can access it at
-http://claude-light.cheme.cmu.edu:5000/rgb
+http://claude-light.cheme.cmu.edu/rgb
 
 The output includes 8 wavelengths of light, and two additional outputs for the total intensity (clear) and near-IR (nir), as well as a picture of the LED during the experiment.
 
@@ -45,16 +45,16 @@ The output includes 8 wavelengths of light, and two additional outputs for the t
 
 ** The API endpoint
 
-The API endpoint is intended for scripting. You can access it at http://claude-light.cheme.cmu.edu:5000/api. 
+The API endpoint is intended for scripting. You can access it at http://claude-light.cheme.cmu.edu:api. 
 
 This returns simple json with input and output. You can pass R, B and B levels as url params, e.g.
 
-http://claude-light.cheme.cmu.edu:5000/api?R=0.1&G=0.3&B=0.2
+http://claude-light.cheme.cmu.edu/api?R=0.1&G=0.3&B=0.2
 
 Here is an API example with curl. You could process this by using jq in a shell if desired.
 
 #+BEGIN_SRC sh :results output
-curl "http://claude-light.cheme.cmu.edu:5000/api?R=0.12&G=0.45&B=1" 
+curl "http://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1" 
 #+END_SRC
 
 #+RESULTS:
@@ -63,7 +63,7 @@ curl "http://claude-light.cheme.cmu.edu:5000/api?R=0.12&G=0.45&B=1"
 Here is an example where we extract the Green channel at 515nm. 
 
 #+BEGIN_SRC sh 
-curl -s "http://claude-light.cheme.cmu.edu:5000/api?R=0.12&G=0.45&B=1" | jq -M '.out."515nm"' 
+curl -s "http://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1" | jq -M '.out."515nm"' 
 #+END_SRC
 
 #+RESULTS:
@@ -73,7 +73,7 @@ Here is an example with Python. You can use this in a Jupyter notebook, for exam
 
 #+BEGIN_SRC python :results output
 import requests
-resp = requests.get('http://claude-light.cheme.cmu.edu:5000/api',
+resp = requests.get('http://claude-light.cheme.cmu.edu/api',
                     params={'R': 0.12, 'G':0.45, 'B': 1})
 print(resp.json())
 #+END_SRC
@@ -264,9 +264,44 @@ You can also see the status.
 sudo systemctl status claude.service
 #+END_SRC
 
+*** Use nginx to forward port 80 to 5000
+
+This is not a critical step, but it makes it a little easier to use the url at http://claude-light.cheme.cmu.edu without a port number. I followed the directions at https://engineerworkshop.com/blog/setup-an-nginx-reverse-proxy-on-a-raspberry-pi-or-any-other-debian-os/amp/. Basically, install nginx:
+
+#+BEGIN_SRC sh
+sudo apt install nginx
+sudo systemctl start nginx
+#+END_SRC
+
+Then, create /etc/nginx/sites-available/claude-light.cheme.cmu.edu.conf with these contents
+
+#+BEGIN_EXAMPLE
+server {
+	listen 80;
+	server_name claude-light.cheme.cmu.edu;
+	location / {
+	proxy_pass http://claude-light.cheme.cmu.edu:5000;
+	}
+}
+#+END_EXAMPLE
+
+Link it like this:
+
+#+BEGIN_SRC sh
+ln -s /etc/nginx/sites-available/example.com.conf /etc/nginx/sites-enabled/example.com.conf﻿
+#+END_SRC
+
+and reload nginx
+
+#+BEGIN_SRC sh
+sudo systemctl reload nginx
+#+END_SRC
+
 
 ** Roadmap
 *** TODO https - secure http
+
+- [X] While at this, get port redirection so we can just use the url with no port.
 
 *** TODO An MQTT version
 
