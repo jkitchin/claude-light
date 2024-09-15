@@ -14,7 +14,7 @@ Welcome to Claude-Light! You can use this instrument to learn about running remo
 ** The Green machine
 
 The entry level instrument is hosted at:
-http://claude-light.cheme.cmu.edu/gm
+https://claude-light.cheme.cmu.edu/gm
 
 Here you will see a web-form where you can enter the Green LED level, and get a measurement of the 515nm light level, and a picture of the LED during the measurement.
 
@@ -24,7 +24,7 @@ There is only one input, and one output in this machine. This instrument can be 
 
 Here are some exercises you could try:
 
-1. How reproducible is a particular setting? Try running the same experiment many times. Record each result. Make a histogram of the results, and compute statistics like the mean and standard deviation.
+1. How reproducible is a particular setting? Try running the same experiment many times. Record each result. Make a histogram of the results, and compute statistics like the mean and standard deviation. Does the distribution of measurements look like a Gaussian distribution?
 2. How does your measurement change during the day? The color sensor is exposed to ambient light which changes throughout the day. Experiment with measuring the background with G=0 and subtracting that from your data.
 3. How does the output depend on the input setting? Run experiments at a variety of green levels and plot how the output depends on those levels. It should look approximately linear. Try fitting a line to the data.
 4. Find the input setting that yields an output of 25000 (or other value of your choice).
@@ -32,7 +32,7 @@ Here are some exercises you could try:
 ** The RGB machine
 
 The RGB machine has three inputs. You can access it at
-http://claude-light.cheme.cmu.edu/rgb
+https://claude-light.cheme.cmu.edu/rgb
 
 The output includes 8 wavelengths of light, and two additional outputs for the total intensity (clear) and near-IR (nir), as well as a picture of the LED during the experiment.
 
@@ -45,16 +45,16 @@ The output includes 8 wavelengths of light, and two additional outputs for the t
 
 ** The API endpoint
 
-The API endpoint is intended for scripting. You can access it at http://claude-light.cheme.cmu.edu:api. 
+The API endpoint is intended for scripting. You can access it at https://claude-light.cheme.cmu.edu:api. 
 
 This returns simple json with input and output. You can pass R, B and B levels as url params, e.g.
 
-http://claude-light.cheme.cmu.edu/api?R=0.1&G=0.3&B=0.2
+https://claude-light.cheme.cmu.edu/api?R=0.1&G=0.3&B=0.2
 
 Here is an API example with curl. You could process this by using jq in a shell if desired.
 
 #+BEGIN_SRC sh :results output
-curl "http://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1" 
+curl "https://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1" 
 #+END_SRC
 
 #+RESULTS:
@@ -63,23 +63,23 @@ curl "http://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1"
 Here is an example where we extract the Green channel at 515nm. 
 
 #+BEGIN_SRC sh 
-curl -s "http://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1" | jq -M '.out."515nm"' 
+curl -s "https://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1" | jq -M '.out."515nm"' 
 #+END_SRC
 
 #+RESULTS:
-: 31215
+: 30878
 
 Here is an example with Python. You can use this in a Jupyter notebook, for example.
 
 #+BEGIN_SRC python :results output
 import requests
-resp = requests.get('http://claude-light.cheme.cmu.edu/api',
+resp = requests.get('https://claude-light.cheme.cmu.edu/api',
                     params={'R': 0.12, 'G':0.45, 'B': 1})
 print(resp.json())
 #+END_SRC
 
 #+RESULTS:
-: {'in': [0.12, 0.45, 1.0], 'out': {'415nm': 2500, '445nm': 31871, '480nm': 15816, '515nm': 31510, '555nm': 9174, '590nm': 7187, '630nm': 10831, '680nm': 4912, 'clear': 65535, 'nir': 13986}}
+: {'in': [0.12, 0.45, 1.0], 'out': {'415nm': 2689, '445nm': 32191, '480nm': 16068, '515nm': 30975, '555nm': 8232, '590nm': 6262, '630nm': 8281, '680nm': 5286, 'clear': 65535, 'nir': 11693}}
 
 *** Recommended exercises
 
@@ -109,7 +109,7 @@ Claude Light is a simple instrument inspired by the work of Sterling Baird and T
 
 Claude light has only a few minor variations:
 
-- I use a REST API instead of MQTT because it is easier to develop. Specifically, by using flask we can provide a variety of interfaces at different levels of sophistication including a browser interface and API access.
+- I use a REST API instead of MQTT because it is easier (for me) to develop. Specifically, by using flask we can provide a variety of interfaces at different levels of sophistication including a browser interface and API access.
 - I use an ethernet cable because the wifi at school is too secure to connect a PicoW and wired so far is more reliable
 - I use a Raspberry Pi instead of a PicoW because it has built in Ethernet port, and I find it easier to debug since I can ssh into it and it has a display port. The Pi also enables better logging.
 - I use float inputs from 0-1 instead of integers. In the program that runs it, floats are the inputs anyway, and the continuous inputs are easier to introduce in my opinion.
@@ -136,7 +136,7 @@ The main point of this section is that this is not as easy as it seems. I probab
 
 * Parts list
 
-The instrument is hosted at http://claude-light.cheme.cmu.edu:5000. That url brings you to this page (which is hosted on GitHUB). This section describes the instrument and its parts.
+The instrument is hosted at https://claude-light.cheme.cmu.edu:5000. That url brings you to this page (which is hosted on GitHUB). This section describes the instrument and its parts.
 
 In the end there is not that much to this device.
 
@@ -266,7 +266,7 @@ sudo systemctl status claude.service
 
 *** Use nginx to forward port 80 to 5000
 
-This is not a critical step, but it makes it a little easier to use the url at http://claude-light.cheme.cmu.edu without a port number. I followed the directions at https://engineerworkshop.com/blog/setup-an-nginx-reverse-proxy-on-a-raspberry-pi-or-any-other-debian-os/amp/. Basically, install nginx:
+This is not a critical step, but it makes it a little easier to use the url at https://claude-light.cheme.cmu.edu without a port number. I followed the directions at https://engineerworkshop.com/blog/setup-an-nginx-reverse-proxy-on-a-raspberry-pi-or-any-other-debian-os/amp/. Basically, install nginx:
 
 #+BEGIN_SRC sh
 sudo apt install nginx
@@ -280,7 +280,7 @@ server {
 	listen 80;
 	server_name claude-light.cheme.cmu.edu;
 	location / {
-	proxy_pass http://claude-light.cheme.cmu.edu:5000;
+	proxy_pass https://claude-light.cheme.cmu.edu:5000;
 	}
 }
 #+END_EXAMPLE
@@ -299,10 +299,18 @@ sudo systemctl reload nginx
 
 
 ** Roadmap
-*** TODO https - secure http
+*** DONE https - secure http
+CLOSED: [2024-09-15 Sun 13:07]
 
 - [X] While at this, get port redirection so we can just use the url with no port.
 
+#+BEGIN_SRC sh
+sudo apt-get install certbot python3-certbot-nginx
+sudo certbot --nginx  # answer some interactive questions
+#+END_SRC
+
+That seems to actually be it. The certificate was automatically installed, and now you can visit https://claude-light.cheme.cmu.edu/api.
+ 
 *** TODO An MQTT version
 
 *** TODO A bluetooth version 
@@ -311,7 +319,7 @@ Claude-light was built specifically for Internet accessibility. A totally local 
 
 *** TODO wifi
 
-It is probably a good idea to see if we can get a wifi capability.
+It is probably a good idea to see if we can get a wifi capability. That would provide some portability.
 
 *** TODO add instrument parameters to API
 
@@ -319,6 +327,8 @@ There are some features in the sensor library we don't use, e.g. flicker-detecti
 
 We could add these to an api to affect how the measurements are made.
 
-*** Better camera mount
+We could also add an optional image to the output
+
+*** TODO Better camera mount
 
 The camera is somewhat floppy at the moment. It could use a better mount. It is a little tricky to figure out what the best thing to do is though. Maybe a 3-d printed case? or something stiffer that can be bolted down to the PCB.
