@@ -47,7 +47,7 @@ The output includes 8 wavelengths of light, and two additional outputs for the t
 
 The API endpoint is intended for scripting. You can access it at https://claude-light.cheme.cmu.edu/api. 
 
-This returns simple json with input and output. You can pass R, B and B levels as url params, e.g.
+This returns simple json with input and output. You can pass R, G and B levels as url params, e.g.
 
 https://claude-light.cheme.cmu.edu/api?R=0.1&G=0.3&B=0.2
 
