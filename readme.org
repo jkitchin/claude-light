@@ -45,7 +45,7 @@ The output includes 8 wavelengths of light, and two additional outputs for the t
 
 ** The API endpoint
 
-The API endpoint is intended for scripting. You can access it at https://claude-light.cheme.cmu.edu:api. 
+The API endpoint is intended for scripting. You can access it at https://claude-light.cheme.cmu.edu/api. 
 
 This returns simple json with input and output. You can pass R, B and B levels as url params, e.g.
 
@@ -311,6 +311,19 @@ sudo certbot --nginx  # answer some interactive questions
 
 That seems to actually be it. The certificate was automatically installed, and now you can visit https://claude-light.cheme.cmu.edu/api.
  
+#+BEGIN_EXAMPLE
+Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/claude-light.cheme.cmu.edu/fullchain.pem
+Key is saved at:         /etc/letsencrypt/live/claude-light.cheme.cmu.edu/privkey.pem
+This certificate expires on 2024-12-14.
+These files will be updated when the certificate renews.
+Certbot has set up a scheduled task to automatically renew this certificate in the background.
+
+Deploying certificate
+Successfully deployed certificate for claude-light.cheme.cmu.edu to /etc/nginx/sites-enabled/claude-light.cheme.cmu.edu.conf
+Congratulations! You have successfully enabled HTTPS on https://claude-light.cheme.cmu.edu
+#+END_EXAMPLE
+
 *** TODO An MQTT version
 
 *** TODO A bluetooth version 
