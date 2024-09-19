@@ -11,11 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: |
-          pip install jsonlines
-          git clone https://github.com/jkitchin/claude-light-python.git
-          cd claude-light-python
-          pip install .
-          cd ..
+          pip install jsonlines requests
           git checkout -b benchmark
           python gm.py
           git add gm.jsonl
