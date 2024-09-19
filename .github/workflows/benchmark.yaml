@@ -10,11 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-      with:
-        ref: benchmark
     - run: |
           pip install jsonlines git+https://github.com/jkitchin/claude-light-python.git
+	  git checkout -b benchmark
           python gm.py
           git add gm.jsonl
           git commit gm.jsonl -M "add data"
-          git push
+          git push benchmark origin
