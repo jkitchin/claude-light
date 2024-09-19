@@ -1,6 +1,7 @@
 import time
 import jsonlines
 import requests
+import json
 
 CLAUDE_IP = 'https://claude-light.cheme.cmu.edu/api'
 
@@ -22,4 +23,4 @@ with open('gm.jsonl', 'a') as f:
     for g in [0, 0.5, 1.0]:
         for i in range(5):        
             d = {'G': g, 'result': gm(g), 'time': time.time()}
-            f.write(d)
+            f.write(json.dumps(d))
