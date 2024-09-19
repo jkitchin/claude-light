@@ -1,0 +1,20 @@
+name: Claude light hardware
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'  
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: benchmark
+      - run: |
+          pip install jsonlines git+https://github.com/jkitchin/claude-light-python.git
+	  python gm.py
+	  git add gm.jsonl
+	  git commit gm.jsonl -M "add data"
+	  git push
