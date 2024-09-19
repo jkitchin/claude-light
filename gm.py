@@ -35,11 +35,11 @@ fig.set_figwidth(10)
 with jsonlines.open('gm.jsonl', 'r') as f:
     for line in f:
         if line['G'] == 0.0:
-            p1[0].plot(line['time'] % 3600, line['result'], 'g.')            
+            p1[0].plot((line['time'] % 3600) / 3600, line['result'], 'g.')            
         elif line['G'] == 0.5:
-            p1[1].plot(line['time'] % 3600, line['result'], 'g.')
+            p1[1].plot((line['time'] % 3600) / 3600, line['result'], 'g.')
         else:
-            p1[2].plot(line['time'] % 3600, line['result'], 'g.')
+            p1[2].plot((line['time'] % 3600) / 3600, line['result'], 'g.')
 
 p1[0].set_title('G=0 vs time')
 p1[1].set_title('G=0.5 vs time')
