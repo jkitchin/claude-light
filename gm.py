@@ -19,16 +19,16 @@ class GreenMachine1:
     
 gm = GreenMachine1()
 
-with open('gm.jsonl', 'a') as f:
+with jsonlines.open('gm.jsonl', 'a') as f:
     for g in [0, 0.5, 1.0]:
         for i in range(5):        
             d = {'G': g, 'result': gm(g), 'time': time.time()}
-            f.write(json.dumps(d) + '\n')
+            f.write(d)
 
 
 t, g, out = [], [], []            
 import matplotlib.pyplot as plt
-with open('gm.jsonl', 'r') as f:
+with jsonlines.open('gm.jsonl', 'r') as f:
     for line in f:
         t += [line['time']]
         g += [line['G']]
