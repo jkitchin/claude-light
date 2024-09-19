@@ -24,3 +24,24 @@ with open('gm.jsonl', 'a') as f:
         for i in range(5):        
             d = {'G': g, 'result': gm(g), 'time': time.time()}
             f.write(json.dumps(d) + '\n')
+
+
+t, g, out = [], [], []            
+import matplotlib.pyplot as plt
+with open('gm.jsonl', 'r') as f:
+    for line in f:
+        t += [line['time']]
+        g += [line['G']]
+        out += [line['result']]
+
+plt.plot(g, out)
+plt.xlabel('g')
+plt.ylabel('out')
+plt.savefig('out-v-g.png')
+plt.close()
+
+plt.figure()
+plt.plot(t, out)
+plt.xlabel('time')
+plt.ylabel('out')
+plt.savefig('out-v-time.png')
