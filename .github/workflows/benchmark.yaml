@@ -14,7 +14,7 @@ jobs:
         ref: benchmark
       - run: |
           pip install jsonlines git+https://github.com/jkitchin/claude-light-python.git
-	  python gm.py
-	  git add gm.jsonl
-	  git commit gm.jsonl -M "add data"
-	  git push
+          python gm.py
+          git add gm.jsonl
+          git commit gm.jsonl -M "add data"
+          git push
