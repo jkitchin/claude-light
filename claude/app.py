@@ -1,5 +1,6 @@
 import base64
 import os
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, request, render_template, session, flash, redirect, make_response
 from gpiozero import RGBLED 
 import time
@@ -16,6 +17,7 @@ i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = AS7341(i2c)
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # TODO: replace with something secure!
 app.secret_key = b'claude-light'
@@ -29,7 +31,7 @@ pc = Picamera2()
 # far, where it seems all the requests come in at once. This adds a retry
 # option. The numbers are all heuristic. I put a "largish" number of retries to
 # avoid a potential infinite loop.
-@retry(tries=10, delay=1)    
+@retry(tries=50, delay=1)    
 def measure(R, G, B, origin=None):
     """Perform a measurement at the RGB settings. Returns a dictionary of data
     that includes the measurements, inputs, time, elapsed time and remote ip
@@ -59,12 +61,20 @@ def measure(R, G, B, origin=None):
     # reboot. there might be some cli way to clear it, but I don't
     # know what it is.
     led.close()
+
+    # I had to modify this when I started using nginx. That was making the
+    # remote_addr all be 127.0.0.1. This seems to get a different IP than that.
+    # I only want this as a way to track individual users, and see where in the
+    # world they are from (see /statistics). This also required updating the
+    # nginx conf. [[/etc/nginx/sites-available/claude-light.cheme.cmu.edu.conf]]
+    ip = request.headers.get('X-Real-Ip', request.remote_addr)
+    
     
     with jsonlines.open(os.path.expanduser('~/results.jsonl'), 'a') as f:
         d = results.copy()
         d.update({'t0': t0,
                   'elapsed_time': time.time() - t0,
-                  'ip': request.remote_addr,
+                  'ip': ip,
                   'origin': origin})
         f.write(d)
 
