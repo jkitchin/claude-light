@@ -21,6 +21,6 @@ jobs:
           git branch --set-upstream-to=origin/benchmark benchmark
           git pull --rebase
           python gm.py
-          git add gm.jsonl
-          git commit gm.jsonl -m "add data"
+          git add gm.jsonl *.png
+          git commit gm.jsonl *.png -m "add data/imgs"
           git push -u origin benchmark
