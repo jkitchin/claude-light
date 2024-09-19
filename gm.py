@@ -6,8 +6,7 @@ CLAUDE_IP = 'https://claude-light.cheme.cmu.edu/api'
 
 class GreenMachine1:
     """One input -> one output instrument.
-    """
-    @retry(tries=3, delay=2)
+    """    
     def __call__(self, G=0):
         """Run the instrument.
         G : int, setting for the green LED channel.
