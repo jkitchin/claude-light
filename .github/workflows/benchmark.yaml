@@ -16,4 +16,4 @@ jobs:
           python gm.py
           git add gm.jsonl
           git commit gm.jsonl -M "add data"
-          git push benchmark origin
+          git push -u origin benchmark
