@@ -15,7 +15,7 @@ jobs:
     - run: |
           git config --global user.email "jkitchin@andrew.cmu.edu"
           git config --global user.name "git-benchmark"
-
+          git config advice.skippedCherryPicks false
           pip install jsonlines requests matplotlib
           git checkout -b benchmark
           git branch --set-upstream-to=origin/benchmark benchmark
