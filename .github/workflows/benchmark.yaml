@@ -13,7 +13,7 @@ jobs:
     - run: |
           pip install jsonlines requests
           git checkout -b benchmark
-          git pull origin benchmark
+          git pull origin benchmark --rebase
           git config --global user.email "jkitchin@andrew.cmu.edu"
           git config --global user.name "git-benchmark"
           python gm.py
