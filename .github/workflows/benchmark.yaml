@@ -13,12 +13,13 @@ jobs:
       with:
           fetch-depth: 0
     - run: |
+          git config --global user.email "jkitchin@andrew.cmu.edu"
+          git config --global user.name "git-benchmark"
+
           pip install jsonlines requests
           git checkout -b benchmark
           git branch --set-upstream-to=origin/benchmark benchmark
           git pull --rebase
-          git config --global user.email "jkitchin@andrew.cmu.edu"
-          git config --global user.name "git-benchmark"
           python gm.py
           git add gm.jsonl
           git commit gm.jsonl -m "add data"
