@@ -1,4 +1,4 @@
-name: Claude light hardware
+name: Benchmark during the day
 
 on:
   workflow_dispatch:
