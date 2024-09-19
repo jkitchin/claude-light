@@ -12,7 +12,7 @@ jobs:
     - uses: actions/checkout@v4
     - run: |
           pip install jsonlines git+https://github.com/jkitchin/claude-light-python.git
-	  git checkout -b benchmark
+          git checkout -b benchmark
           python gm.py
           git add gm.jsonl
           git commit gm.jsonl -M "add data"
