@@ -43,7 +43,7 @@ with jsonlines.open('gm.jsonl', 'r') as f:
 p1[0].set_title('G=0 vs time')
 p1[1].set_title('G=0.5 vs time')
 p1[2].set_title('G=1 vs time')
-
+plt.tight_layout()
 plt.savefig('out-v-time.png')
             
             
