@@ -34,14 +34,14 @@ with jsonlines.open('gm.jsonl', 'r') as f:
         g += [line['G']]
         out += [line['result']]
 
-plt.plot(g, out)
+plt.plot(g, out, 'g.')
 plt.xlabel('g')
 plt.ylabel('out')
 plt.savefig('out-v-g.png')
 plt.close()
 
 plt.figure()
-plt.plot(t, out)
+plt.plot(t, out, 'g.')
 plt.xlabel('time')
 plt.ylabel('out')
 plt.savefig('out-v-time.png')
