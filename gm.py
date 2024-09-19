@@ -29,7 +29,7 @@ with jsonlines.open('gm.jsonl', 'a') as f:
 t, g, out = [], [], []            
 import matplotlib.pyplot as plt
 
-p1 = plt.subplots(1, 3)
+fig, p1 = plt.subplots(1, 3)
 
 with jsonlines.open('gm.jsonl', 'r') as f:
     for line in f:
