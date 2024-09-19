@@ -28,20 +28,40 @@ with jsonlines.open('gm.jsonl', 'a') as f:
 
 t, g, out = [], [], []            
 import matplotlib.pyplot as plt
+
+p1 = plt.subplots(1, 3)
+
 with jsonlines.open('gm.jsonl', 'r') as f:
     for line in f:
-        t += [line['time']]
-        g += [line['G']]
-        out += [line['result']]
+        if line['G'] == 0.0:
+            p1[0].plot(line['time'], line['out'], 'g.')            
+        elif line['G'] == 0.5:
+            p1[1].plot(line['time'], line['out'], 'g.')
+        else:
+            p1[2].plot(line['time'], line['out'], 'g.')
 
-plt.plot(g, out, 'g.')
-plt.xlabel('g')
-plt.ylabel('out')
-plt.savefig('out-v-g.png')
-plt.close()
+p1[0].set_title('G=0 vs time')
+p1[1].set_title('G=0.5 vs time')
+p1[2].set_title('G=1 vs time')
 
-plt.figure()
-plt.plot(t, out, 'g.')
-plt.xlabel('time')
-plt.ylabel('out')
 plt.savefig('out-v-time.png')
+            
+            
+    
+# with jsonlines.open('gm.jsonl', 'r') as f:
+#     for line in f:
+#         t += [line['time']]
+#         g += [line['G']]
+#         out += [line['result']]
+
+# plt.plot(g, out, 'g.')
+# plt.xlabel('g')
+# plt.ylabel('out')
+# plt.savefig('out-v-g.png')
+# plt.close()
+
+# plt.figure()
+# plt.plot(t, out, 'g.')
+# plt.xlabel('time')
+# plt.ylabel('out')
+# plt.savefig('out-v-time.png')
