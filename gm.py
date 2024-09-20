@@ -32,14 +32,17 @@ import matplotlib.pyplot as plt
 fig, p1 = plt.subplots(1, 3)
 fig.set_figwidth(10)
 
+day = 60 * 60 * 24 # seconds in a day
+
 with jsonlines.open('gm.jsonl', 'r') as f:
     for line in f:
         if line['G'] == 0.0:
-            p1[0].plot((line['time'] % 3600) / 3600, line['result'], 'g.')            
+            # time is in seconds. I convert to hours, 
+            p1[0].plot((line['time'] % day) / 3600, line['result'], 'g.')            
         elif line['G'] == 0.5:
-            p1[1].plot((line['time'] % 3600) / 3600, line['result'], 'g.')
+            p1[1].plot((line['time'] % day) / 3600, line['result'], 'g.')
         else:
-            p1[2].plot((line['time'] % 3600) / 3600, line['result'], 'g.')
+            p1[2].plot((line['time'] % day) / 3600, line['result'], 'g.')
 
 p1[0].set_title('G=0 vs time')
 p1[1].set_title('G=0.5 vs time')
