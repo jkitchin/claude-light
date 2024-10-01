@@ -22,5 +22,5 @@ jobs:
           git pull --rebase
           python gm-bg.py
           git add gm-bg.jsonl *.png
-          git commit gm.jsonl *.png -m "add data/imgs"
+          git commit gm-bg.jsonl *.png -m "add data/imgs"
           git push -u origin benchmark

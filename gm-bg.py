@@ -52,22 +52,3 @@ p1[2].set_title('G=1 vs time')
 plt.tight_layout()
 plt.savefig('out-w-bg-subtraction-v-time.png')
             
-            
-    
-# with jsonlines.open('gm.jsonl', 'r') as f:
-#     for line in f:
-#         t += [line['time']]
-#         g += [line['G']]
-#         out += [line['result']]
-
-# plt.plot(g, out, 'g.')
-# plt.xlabel('g')
-# plt.ylabel('out')
-# plt.savefig('out-v-g.png')
-# plt.close()
-
-# plt.figure()
-# plt.plot(t, out, 'g.')
-# plt.xlabel('time')
-# plt.ylabel('out')
-# plt.savefig('out-v-time.png')
