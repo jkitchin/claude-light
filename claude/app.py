@@ -12,6 +12,7 @@ import datetime
 import pandas as pd
 from retry import retry
 import requests
+import subprocess
 
 i2c = board.I2C()  # uses board.SCL and board.SDA
 sensor = AS7341(i2c)
@@ -19,8 +20,10 @@ sensor = AS7341(i2c)
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-# TODO: replace with something secure!
-app.secret_key = b'claude-light'
+from dotenv import load_dotenv
+load_dotenv()
+
+app.secret_key = os.environ.get('CLAUDE_LIGHT_SECRET', 'claude-light')
 
 import io
 from picamera2 import Picamera2
@@ -283,12 +286,26 @@ def stats():
 
     ips = list(set(ips))
     req = requests.post('https://ipinfo.io/tools/summarize-ips?cli=1',
-                    data={'ips': ips})
+                        data={'ips': ips})
 
+#    try:
+#        url = req.json()['reportUrl']
+#    except:
+#        url = "<error>"
+
+    # [2024-10-05 Sat] this seems dumb, but I guess there is a limit of 1000 ips
+    # in the API, but not when I run it this way. I hit 1000 IPs, and it seemed
+    # to quit working
+    with open(os.path.expanduser('~/ips'), 'w') as f:
+        for ip in ips:
+            f.write(f'{ip}\n')
+
+    cmd = 'cat ~/ips | curl -s -XPOST --data-binary @- "ipinfo.io/tools/summarize-ips?cli=1" | jq .reportUrl'
+    url = subprocess.check_output(cmd, shell=True, text=True)        
     
 
     return f'''<html><body>
-    {N} experiments run by {len(ips)} users. <a href="{req.json()['reportUrl']}">Map of IP addresses</a>
+    {N} experiments run by {len(ips)} users. <a href={url}>Map of IP addresses</a>
     <br>
     <br>
     <img src="data:image/png;base64, {imgb64}">

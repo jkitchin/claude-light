@@ -14,7 +14,8 @@ dependencies = [
 	     "flask",
 	     "jsonlines",
 	     "matplotlib",
-	     "pandas"]
+	     "pandas",
+	     "python-dotenv"]
 license = {text = "MIT"}
 dynamic = ["version"]
 
