@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guide · Claude-Light</title>
+  <link rel="stylesheet" href="style.css">
+  <script>window.CLAUDE_LIGHT_API = 'https://claude-light.cheme.cmu.edu';</script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><span class="dot"></span>Claude-Light</a>
+    <nav>
+      <a href="guide.html">Guide</a>
+      <a href="rgb.html">RGB</a>
+      <a href="gm.html">Green Machine</a>
+      <a href="session.html">Session</a>
+      <a href="stats.html">Statistics</a>
+      <a href="https://github.com/jkitchin/claude-light">GitHub</a>
+    </nav>
+    <span class="status" id="status" title="Instrument queue">…</span>
+  </header>
+
+  <main>
+    <h1>Using Claude-Light</h1>
+    <p>Claude-Light has an RGB LED and an
+    <a href="https://www.adafruit.com/product/4698">AS7341</a> spectral sensor.
+    You choose the LED levels, from 0 (off) to 1 (full brightness), and the
+    sensor reports ten numbers: the light at 415, 445, 480, 515, 555, 590, 630
+    and 680 nm, plus <code>clear</code> (total visible) and <code>nir</code>
+    (near-infrared). The readings are counts from 0 to 65535. The sensor also
+    sees the room light, which changes during the day.</p>
+
+    <h2 id="green-machine">The Green Machine</h2>
+    <p>The <a href="gm.html">Green Machine</a> has one input (the green LED
+    level) and one output (the 515nm reading). It is a good place to learn
+    about reproducibility, statistics, linear regression, optimization and
+    design of experiments.</p>
+    <ol>
+      <li>How reproducible is a particular setting? Run the same experiment
+      many times, make a histogram of the results, and compute the mean and
+      standard deviation. Does the distribution look Gaussian?</li>
+      <li>How does your measurement change during the day? Measure the
+      background with G=0 and subtract it from your data.</li>
+      <li>How does the output depend on the input? Measure at several green
+      levels, plot the output against the input, and fit a line.</li>
+      <li>Find the input setting that gives an output of 25000.</li>
+    </ol>
+
+    <h2 id="rgb-machine">The RGB machine</h2>
+    <p>The <a href="rgb.html">RGB machine</a> has three inputs and ten
+    outputs. The <a href="https://claude-light.cheme.cmu.edu/rgb">version on
+    the instrument</a> also shows a photo of the LED during the
+    measurement.</p>
+    <ol>
+      <li>Repeat a measurement many times and compare the mean and standard
+      deviation of each channel.</li>
+      <li>Vary one input and plot how each output depends on it.</li>
+      <li>Use multivariate linear regression to model the outputs from the
+      inputs.</li>
+      <li>Find the inputs that give 25000 on the 480nm, 515nm and 630nm
+      channels at the same time.</li>
+    </ol>
+
+    <h2 id="api">The API</h2>
+    <p>For scripts and notebooks, request</p>
+    <pre>https://claude-light.cheme.cmu.edu/api?R=0.12&amp;G=0.45&amp;B=1</pre>
+    <p>Missing inputs are 0, and values outside 0 to 1 are clipped. The reply
+    is JSON with the inputs and the ten outputs:</p>
+    <pre>{"in": [0.12, 0.45, 1.0],
+ "out": {"415nm": 1869, "445nm": 30238, "480nm": 14230, "515nm": 29596,
+         "555nm": 6576, "590nm": 4703, "630nm": 6662, "680nm": 2247,
+         "clear": 58911, "nir": 1559}}</pre>
+    <p>In Python:</p>
+    <pre>import requests
+
+def measure(R=0, G=0, B=0):
+    resp = requests.get('https://claude-light.cheme.cmu.edu/api',
+                        params={'R': R, 'G': G, 'B': B})
+    resp.raise_for_status()
+    return resp.json()['out']
+
+measure(G=0.5)['515nm']</pre>
+    <p>The <a href="https://github.com/jkitchin/claude-light-python">claude-light-python</a>
+    package wraps this for Jupyter notebooks and handles retries for you.</p>
+    <p>For spreadsheets, <code>https://claude-light.cheme.cmu.edu/csv?G=0.5</code>
+    returns just the 515nm reading as text, so in Google Sheets
+    <code>=IMPORTDATA("https://claude-light.cheme.cmu.edu/csv?G=0.5")</code>
+    puts a measurement in a cell.</p>
+
+    <h3>When the instrument is busy</h3>
+    <p>There is one instrument for everyone, and each measurement takes about
+    0.7 s, so it can do about 1.5 measurements per second in total. Requests
+    wait their turn in a queue. If the queue is full you get HTTP 503, and if
+    you already have several measurements waiting you get HTTP 429. Both come
+    with a <code>Retry-After</code> header saying how many seconds to wait.
+    Please measure one point at a time rather than sending many requests at
+    once; it is not faster, and it makes everyone wait.</p>
+    <pre>import time, requests
+
+def measure(R=0, G=0, B=0):
+    while True:
+        resp = requests.get('https://claude-light.cheme.cmu.edu/api',
+                            params={'R': R, 'G': G, 'B': B})
+        if resp.status_code in (429, 503):
+            time.sleep(int(resp.headers.get('Retry-After', 3)))
+            continue
+        resp.raise_for_status()
+        return resp.json()['out']</pre>
+
+    <h3>Other endpoints</h3>
+    <ul>
+      <li><code>/status</code>: whether the instrument is busy and how many
+      measurements are queued.</li>
+      <li><code>/stats/data.json</code>: the usage statistics behind the
+      <a href="stats.html">statistics page</a>.</li>
+      <li><code>/data/export.csv</code>: every measurement ever made, without IP
+      addresses. Add <code>?since=</code> and <code>&amp;until=</code> (Unix
+      times) to get a range.</li>
+      <li><a href="https://claude-light.cheme.cmu.edu/docs">/docs</a>:
+      interactive API documentation.</li>
+    </ul>
+
+    <h2 id="more">More exercises</h2>
+    <p>The <a href="https://github.com/jkitchin/claude-light/blob/main/exercises.org">exercise list</a>
+    goes further: detection limits, interpolation, uncertainty
+    quantification, machine learning with scikit-learn and xgboost, active
+    learning and Bayesian optimization, design of experiments, background
+    subtraction, and automating data collection.</p>
+
+    <h2 id="privacy">Data and privacy</h2>
+    <p>Every measurement is recorded, so the data can be used for the
+    statistics page and for teaching. IP addresses are not stored. Each one is
+    looked up in an offline database to get an approximate location (the city),
+    and replaced by a one-way hash so unique users can be counted. Location
+    data is from <a href="https://db-ip.com">DB-IP</a> (CC BY 4.0).</p>
+
+    <h2 id="about">About</h2>
+    <p>Claude-Light is inspired by the work of Sterling Baird and Taylor
+    Sparks, <a href="http://dx.doi.org/10.1016/j.matt.2022.11.007">What is a
+    minimal working example for a self-driving laboratory?</a> (Matter, 2022)
+    and <a href="http://dx.doi.org/10.1016/j.xpro.2023.102329">Building a
+    "Hello World" for self-driving labs</a> (STAR Protocols, 2023). It runs on
+    a Raspberry Pi 4 with a web API instead of MQTT, a wired network
+    connection, and a camera. The
+    <a href="https://github.com/jkitchin/claude-light#about">README</a> has the
+    history of the project, the parts list and the setup instructions.</p>
+  </main>
+
+  <footer>
+    The instrument runs at <a href="https://claude-light.cheme.cmu.edu">claude-light.cheme.cmu.edu</a> ·
+    <a href="https://github.com/jkitchin/claude-light/issues">Report an issue</a>
+  </footer>
+</body>
+</html>

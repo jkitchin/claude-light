@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Green Machine · Claude-Light</title>
+  <link rel="stylesheet" href="style.css">
+  <script>window.CLAUDE_LIGHT_API = 'https://claude-light.cheme.cmu.edu';</script>
+  <script src="app.js" defer></script>
+  <script src="client.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><span class="dot"></span>Claude-Light</a>
+    <nav>
+      <a href="guide.html">Guide</a>
+      <a href="rgb.html">RGB</a>
+      <a href="gm.html">Green Machine</a>
+      <a href="session.html">Session</a>
+      <a href="stats.html">Statistics</a>
+      <a href="https://github.com/jkitchin/claude-light">GitHub</a>
+    </nav>
+    <span class="status" id="status" title="Instrument queue">…</span>
+  </header>
+
+  <main>
+    <h1>Green Machine #1</h1>
+    <p>One input, one output. See the <a href="guide.html#green-machine">guide</a>
+    for exercises.</p>
+
+    <form class="card" id="form">
+      <p>Enter numbers between 0 and 1, separated by commas, for example
+      <code>0, 0.1, 0.2</code>. Press Enter/Return or the Measure button to
+      start the experiment. Each value takes about a second.</p>
+      <div class="row">
+        <label for="G">Green</label>
+        <input type="text" id="G" placeholder="0, 0.1, 0.2">
+        <button type="submit" id="go">Measure</button>
+      </div>
+      <span class="muted" id="msg"></span>
+    </form>
+
+    <div class="grid" id="result" hidden>
+      <div class="card">
+        <h2>Results</h2>
+        <p class="muted">You should be able to copy and paste this table into Excel.</p>
+        <table id="table"></table>
+        <p><a id="download" hidden>Download csv file</a></p>
+      </div>
+      <div class="card">
+        <h2>Plot</h2>
+        <div id="plot"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    The instrument runs at <a href="https://claude-light.cheme.cmu.edu">claude-light.cheme.cmu.edu</a> ·
+    <a href="https://github.com/jkitchin/claude-light/issues">Report an issue</a>
+  </footer>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const CL = window.ClaudeLight;
+      const $ = (id) => document.getElementById(id);
+      const MAX = 50;
+
+      $('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const parts = $('G').value.split(',').map((v) => v.trim() || '0');
+        if (parts.some((v) => isNaN(+v))) {
+          $('msg').textContent = 'There was an error parsing your input. Make sure the values are numbers separated by commas.';
+          return;
+        }
+        if (parts.length > MAX) {
+          $('msg').textContent = `Please use at most ${MAX} values at a time.`;
+          return;
+        }
+        const Gin = parts.map(CL.clamp);
+        const rows = [];
+        $('go').disabled = true;
+        $('result').hidden = false;
+        try {
+          // One at a time: the instrument is shared, and parallel requests
+          // would only wait in its queue.
+          for (const [i, g] of Gin.entries()) {
+            $('msg').textContent = `Measuring ${i + 1} of ${Gin.length}…`;
+            const r = await CL.measure(0, g, 0, {
+              onWait: (s) => { $('msg').textContent = `Instrument busy, retrying in ${s} s…`; },
+            });
+            rows.push([g, r.out['515nm']]);
+            CL.table($('table'), ['Input', 'Output'], rows);
+            CL.scatter($('plot'), rows, 'G input', '515nm');
+          }
+          CL.csvLink($('download'), rows);
+          $('msg').textContent = '';
+        } catch (err) {
+          $('msg').textContent = err.message;
+        } finally {
+          $('go').disabled = false;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

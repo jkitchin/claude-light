@@ -7,6 +7,28 @@ This repository contains the app code to run a claude-light server and to intera
 <a href="https://github.com/jkitchin/claude-light/actions/workflows/online.yaml"><img src="https://github.com/jkitchin/claude-light/actions/workflows/online.yaml/badge.svg"></a>
 #+END_HTML
 
+- Use the instrument in your browser: https://jkitchin.github.io/claude-light/ (or on the instrument itself at https://claude-light.cheme.cmu.edu)
+- Usage statistics and a map of where experiments come from: https://claude-light.cheme.cmu.edu/stats
+
+** Agent skills
+
+This repository includes skills for AI coding agents (Claude Code, Codex, VS Code/Copilot, Cursor, Gemini CLI, OpenCode). Install them with [[https://github.com/jkitchin/knowhow][knowhow]] or ~npx skills~:
+
+#+BEGIN_SRC sh
+# Running and analyzing experiments on Claude-Light
+uvx --from git+https://github.com/jkitchin/knowhow knowhow add jkitchin/claude-light --skill claude-light
+# or: npx skills add jkitchin/claude-light --skill claude-light
+
+# Operating and maintaining the Claude-Light server
+uvx --from git+https://github.com/jkitchin/knowhow knowhow add jkitchin/claude-light --skill claude-light-server
+#+END_SRC
+
+Add ~-g~ to install for all your projects.
+
+** GitHub Pages site
+
+The site at https://jkitchin.github.io/claude-light/ is served from [[./docs/]]. It is plain HTML; its pages call the instrument's API from the browser. ~docs/style.css~, ~docs/app.js~ and ~docs/stats.js~ are copies of the files in ~claude/static/~ (a test checks they match).
+
 * Usage
 
 Welcome to Claude-Light! You can use this instrument to learn about running remote experiments, analyzing data, automation, design of experiments, and more. The following sections describe several ways you can interact with Claude Light.

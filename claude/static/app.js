@@ -2,11 +2,14 @@
 // sliders and number inputs in sync, and showing "busy" replies from htmx.
 
 (function () {
+  // Set window.CLAUDE_LIGHT_API to use these pages from another site
+  // (the GitHub Pages copy in docs/ does).
+  const API = window.CLAUDE_LIGHT_API || '';
   const badge = document.getElementById('status');
 
   async function poll() {
     try {
-      const s = await (await fetch('/status')).json();
+      const s = await (await fetch(API + '/status')).json();
       badge.className = 'status ' + (s.queue > 0 ? 'busy' : 'idle');
       badge.textContent = s.queue > 0 ? `busy · ${s.queue} queued` : 'idle';
     } catch (e) {

@@ -2,6 +2,7 @@
 // in the browser when the filters change.
 
 (function () {
+  const API = window.CLAUDE_LIGHT_API || '';
   const $ = (id) => document.getElementById(id);
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const fmt = (x) => (x == null ? '–' : x.toLocaleString());
@@ -211,7 +212,7 @@
   }
 
   async function init() {
-    D = await (await fetch('/stats/data.json')).json();
+    D = await (await fetch(API + '/stats/data.json')).json();
     drawStatic();
     redraw();
 

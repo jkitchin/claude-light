@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RGB · Claude-Light</title>
+  <link rel="stylesheet" href="style.css">
+  <script>window.CLAUDE_LIGHT_API = 'https://claude-light.cheme.cmu.edu';</script>
+  <script src="app.js" defer></script>
+  <script src="client.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><span class="dot"></span>Claude-Light</a>
+    <nav>
+      <a href="guide.html">Guide</a>
+      <a href="rgb.html">RGB</a>
+      <a href="gm.html">Green Machine</a>
+      <a href="session.html">Session</a>
+      <a href="stats.html">Statistics</a>
+      <a href="https://github.com/jkitchin/claude-light">GitHub</a>
+    </nav>
+    <span class="status" id="status" title="Instrument queue">…</span>
+  </header>
+
+  <main>
+    <h1>RGB machine</h1>
+    <p>Set each level from 0 to 1 and press Measure. See the
+    <a href="guide.html#rgb-machine">guide</a> for exercises. To see a photo of
+    the LED as well, use the
+    <a href="https://claude-light.cheme.cmu.edu/rgb">RGB machine on the instrument</a>.</p>
+
+    <form class="card" id="form">
+      <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap">
+        <div style="flex:1; min-width:260px">
+          <div class="row">
+            <label for="R">Red</label>
+            <input type="range" min="0" max="1" step="0.01" value="0" data-sync="R" aria-label="Red slider">
+            <input type="number" min="0" max="1" step="any" id="R" name="R" value="0">
+          </div>
+          <div class="row">
+            <label for="G">Green</label>
+            <input type="range" min="0" max="1" step="0.01" value="0" data-sync="G" aria-label="Green slider">
+            <input type="number" min="0" max="1" step="any" id="G" name="G" value="0">
+          </div>
+          <div class="row">
+            <label for="B">Blue</label>
+            <input type="range" min="0" max="1" step="0.01" value="0" data-sync="B" aria-label="Blue slider">
+            <input type="number" min="0" max="1" step="any" id="B" name="B" value="0">
+          </div>
+        </div>
+        <div class="swatch" id="swatch"></div>
+      </div>
+      <button type="submit" id="go">Measure</button>
+      <span class="muted" id="msg"></span>
+    </form>
+
+    <div id="result" hidden>
+      <div class="card">
+        <h2>Spectrum</h2>
+        <div id="spectrum"></div>
+      </div>
+      <div class="card">
+        <h2>Results</h2>
+        <p class="muted">Each measurement is added as a row. You should be able
+        to copy and paste this table into Excel.</p>
+        <div class="table-scroll"><table id="table"></table></div>
+        <p><a id="download" hidden>Download csv file</a> ·
+          <a href="#" id="clear">Clear</a></p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    The instrument runs at <a href="https://claude-light.cheme.cmu.edu">claude-light.cheme.cmu.edu</a> ·
+    <a href="https://github.com/jkitchin/claude-light/issues">Report an issue</a>
+  </footer>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const CL = window.ClaudeLight;
+      const $ = (id) => document.getElementById(id);
+      const header = ['R', 'G', 'B', ...CL.CHANNELS];
+      let rows = [];
+
+      function paint() {
+        const v = (n) => Math.round(255 * CL.clamp($(n).value));
+        $('swatch').style.background = `rgb(${v('R')}, ${v('G')}, ${v('B')})`;
+      }
+      document.addEventListener('rgbchange', paint);
+      paint();
+
+      $('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        $('go').disabled = true;
+        $('msg').textContent = 'Measuring…';
+        try {
+          const r = await CL.measure($('R').value, $('G').value, $('B').value, {
+            onWait: (s) => { $('msg').textContent = `Instrument busy, retrying in ${s} s…`; },
+          });
+          rows.push([...r.in, ...CL.CHANNELS.map((k) => r.out[k])]);
+          CL.spectrum($('spectrum'), r.out);
+          CL.table($('table'), header, rows);
+          CL.csvLink($('download'), [header, ...rows]);
+          $('result').hidden = false;
+          $('msg').textContent = '';
+        } catch (err) {
+          $('msg').textContent = err.message;
+        } finally {
+          $('go').disabled = false;
+        }
+      });
+
+      $('clear').addEventListener('click', (e) => {
+        e.preventDefault();
+        rows = [];
+        $('result').hidden = true;
+      });
+    });
+  </script>
+</body>
+</html>
