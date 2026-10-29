@@ -110,7 +110,7 @@ analysis.
 
 ## Other ways in
 
-- Browser pages: https://jkitchin.github.io/claude-light/ (Green Machine, RGB,
+- Browser pages: https://kitchingroup.cheme.cmu.edu/claude-light/ (Green Machine, RGB,
   Session) or https://claude-light.cheme.cmu.edu/rgb (with a camera photo).
 - Google Sheets: `=IMPORTDATA("https://claude-light.cheme.cmu.edu/csv?G=0.5")`
   returns the 515nm reading.

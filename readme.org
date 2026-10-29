@@ -7,7 +7,7 @@ This repository contains the app code to run a claude-light server and to intera
 <a href="https://github.com/jkitchin/claude-light/actions/workflows/online.yaml"><img src="https://github.com/jkitchin/claude-light/actions/workflows/online.yaml/badge.svg"></a>
 #+END_HTML
 
-- Use the instrument in your browser: https://jkitchin.github.io/claude-light/ (or on the instrument itself at https://claude-light.cheme.cmu.edu)
+- Use the instrument in your browser: https://kitchingroup.cheme.cmu.edu/claude-light/ (or on the instrument itself at https://claude-light.cheme.cmu.edu)
 - Usage statistics and a map of where experiments come from: https://claude-light.cheme.cmu.edu/stats
 
 ** Agent skills
@@ -27,7 +27,7 @@ Add ~-g~ to install for all your projects.
 
 ** GitHub Pages site
 
-The site at https://jkitchin.github.io/claude-light/ is served from [[./docs/]]. It is plain HTML; its pages call the instrument's API from the browser. ~docs/style.css~, ~docs/app.js~ and ~docs/stats.js~ are copies of the files in ~claude/static/~ (a test checks they match).
+The site at https://kitchingroup.cheme.cmu.edu/claude-light/ is served from [[./docs/]]. It is plain HTML; its pages call the instrument's API from the browser. ~docs/style.css~, ~docs/app.js~ and ~docs/stats.js~ are copies of the files in ~claude/static/~ (a test checks they match).
 
 * Usage
 
