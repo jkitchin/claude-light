@@ -45,7 +45,7 @@ The output includes 8 wavelengths of light, and two additional outputs for the t
 
 ** The API endpoint
 
-The API endpoint is intended for scripting. You can access it at https://claude-light.cheme.cmu.edu/api. 
+The API endpoint is intended for scripting. You can access it at https://claude-light.cheme.cmu.edu/api.
 
 This returns simple json with input and output. You can pass R, G and B levels as url params, e.g.
 
@@ -54,16 +54,16 @@ https://claude-light.cheme.cmu.edu/api?R=0.1&G=0.3&B=0.2
 Here is an API example with curl. You could process this by using jq in a shell if desired.
 
 #+BEGIN_SRC sh :results output
-curl "https://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1" 
+curl "https://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1"
 #+END_SRC
 
 #+RESULTS:
 : {"in":[0.12,0.45,1.0],"out":{"415nm":2483,"445nm":31854,"480nm":15715,"515nm":31083,"555nm":9082,"590nm":7059,"630nm":10611,"680nm":4844,"clear":65535,"nir":13854}}
 
-Here is an example where we extract the Green channel at 515nm. 
+Here is an example where we extract the Green channel at 515nm.
 
-#+BEGIN_SRC sh 
-curl -s "https://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1" | jq -M '.out."515nm"' 
+#+BEGIN_SRC sh
+curl -s "https://claude-light.cheme.cmu.edu/api?R=0.12&G=0.45&B=1" | jq -M '.out."515nm"'
 #+END_SRC
 
 #+RESULTS:
@@ -109,7 +109,7 @@ Claude Light is a simple instrument inspired by the work of Sterling Baird and T
 
 Claude light has only a few minor variations:
 
-- I use a REST API instead of MQTT because it is easier (for me) to develop. Specifically, by using flask we can provide a variety of interfaces at different levels of sophistication including a browser interface and API access.
+- I use a REST API instead of MQTT because it is easier (for me) to develop. Specifically, by using a web framework (FastAPI) we can provide a variety of interfaces at different levels of sophistication including a browser interface and API access.
 - I use an ethernet cable because the wifi at school is too secure to connect a PicoW and wired so far is more reliable
 - I use a Raspberry Pi instead of a PicoW because it has built in Ethernet port, and I find it easier to debug since I can ssh into it and it has a display port. The Pi also enables better logging.
 - I use float inputs from 0-1 instead of integers. In the program that runs it, floats are the inputs anyway, and the continuous inputs are easier to introduce in my opinion.
@@ -131,12 +131,12 @@ Next, I reverted to a Raspberry Pi 2 I had sitting around where finally everythi
 
 Finally, I settled on a Raspberry Pi 4 which is the version described here.
 
-The main point of this section is that this is not as easy as it seems. I probably spent 2 months on and off trying all these variations. 
+The main point of this section is that this is not as easy as it seems. I probably spent 2 months on and off trying all these variations.
 
 
 * Parts list
 
-The instrument is hosted at https://claude-light.cheme.cmu.edu:5000. That url brings you to this page (which is hosted on GitHUB). This section describes the instrument and its parts.
+The instrument is hosted at https://claude-light.cheme.cmu.edu. This section describes the instrument and its parts.
 
 In the end there is not that much to this device.
 
@@ -178,7 +178,7 @@ You have to enable the I2C interface in raspi-config. I also enable ssh.
 sudo raspi-config
 #+END_SRC
 
-Go to interface options, then to I2C to enable it. 
+Go to interface options, then to I2C to enable it.
 
 ** Setup and activate a virtual environment for Python
 
@@ -198,49 +198,73 @@ If not, you have to manually run this.
 
 ** Install claude
 
-The package is only available on GitHUB. Install it like this.
-
-#+BEGIN_SRC sh
-pip install git+git://github.com/jkitchin/claude-light
-#+END_SRC
-
-Alternatively you can clone and install it locally.
+Clone the repository and install it into the virtual environment, with the hardware extras:
 
 #+BEGIN_SRC sh
 git clone git@github.com:jkitchin/claude-light.git
-pip install -e claude-pi
+cd claude-light
+~/.venv/bin/pip install -e '.[pi]'
 #+END_SRC
 
-I think this will install all the dependencies and it should also install a cli called ~claude~ that will start the app. Normally you would only run this on the Raspberry Pi.
+This installs a cli called ~claude-light~ that starts the server on 127.0.0.1:8000. nginx (below) makes it public. Normally you would only run this on the Raspberry Pi.
 
-You also have to set  up /etc/rc.local to automatically start the server when it boots up. To achieve this, add something like this before the ~exit 0~ line.:
+The server needs two secrets in ~/claude-light/.env:
 
-sudo -u jkitchin claude &
+#+BEGIN_SRC text
+CLAUDE_LIGHT_SECRET=<random hex, signs the session cookie>
+CLAUDE_LIGHT_IP_SALT=<random hex, used to hash IP addresses>
+#+END_SRC
 
-It is a little tricky to kill the server. So far I use:
+Generate each with ~python3 -c "import secrets; print(secrets.token_hex(32))"~. Do not change the salt later; it would reset the unique-user counts.
+
+To develop on a computer without the hardware, use the simulated instrument:
 
 #+BEGIN_SRC sh
-pkill claude
+pip install -e '.[test]'
+CLAUDE_LIGHT_FAKE=1 uvicorn --factory claude.app:create_app --reload
+pytest
 #+END_SRC
+
+** How the server works
+
+There is one LED, one sensor and one camera, so every measurement goes through a single queue (see [[./claude/instrument.py]]). Each measurement takes about 0.65 s, so the instrument can do about 1.5 measurements per second for everyone combined. When the queue is full, requests get HTTP 503 with a ~Retry-After~ header, and a client with 3 measurements already waiting gets HTTP 429. nginx also limits each IP address to about 2 measurement requests per second.
+
+** Data and statistics
+
+Measurements are stored in a SQLite database in ~/claude-light-data/claude.db (see [[./claude/store.py]]). IP addresses are not stored. They are looked up in an offline GeoIP database to get an approximate location (city level), and replaced by a one-way hash so unique users can be counted. Small rollup tables keep the statistics page fast.
+
+The location database is DB-IP Lite City (CC BY 4.0). Download it with [[./scripts/update_geodb.sh]]; a systemd timer refreshes it monthly (see [[./deploy/]]).
+
+The statistics page is at https://claude-light.cheme.cmu.edu/stats, and the anonymized data can be downloaded from https://claude-light.cheme.cmu.edu/data/export.csv.
+
+Before 2026-10-29 results were appended to ~/results.jsonl. [[./scripts/migrate_jsonl.py]] loads that file into the database. It can be re-run; it only adds lines newer than what is already in the database.
 
 ** Setup claude as a service
 
 It is desirable to setup the Pi so that claude automatically runs when the Pi starts up, and is easy to restart. The best way to do this is with systemd. We have to create a file like this in /etc/systemd/system called claude.service with these contents. You should adapt this file to use the username on the Pi where claude is installed.
 
 #+BEGIN_SRC text :tangle claude.service
-[Unit]                                               
+[Unit]
 Description=Claude Light server
-		                                               
-[Service]                                          
-Type=simple                                       
-Restart=always                                         
-RestartSec=1                                        
-User=jkitchin                                
-ExecStart=/home/jkitchin/.venv/bin/claude                           
-ExecStop=pkill claude
-	                         
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=jkitchin
+WorkingDirectory=/home/jkitchin/claude-light
+# Reads CLAUDE_LIGHT_SECRET and CLAUDE_LIGHT_IP_SALT from here.
+EnvironmentFile=/home/jkitchin/claude-light/.env
+ExecStart=/home/jkitchin/.venv/bin/claude-light
+# Give the instrument time to turn the LED off and release the GPIO pins.
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+
 [Install]
-WantedBy=multi-user.target  
+WantedBy=multi-user.target
 #+END_SRC
 
 I use this script to setup, load and enable the service  [[./setup-service.sh]].
@@ -258,43 +282,40 @@ sudo systemctl stop claude.service
 sudo systemctl restart claude.service
 #+END_SRC
 
-You can also see the status.
+You can also see the status and the logs.
 
 #+BEGIN_SRC sh
 sudo systemctl status claude.service
+journalctl -u claude.service -f
 #+END_SRC
 
-*** Use nginx to forward port 80 to 5000
+The monthly GeoIP update is another service and timer:
 
-This is not a critical step, but it makes it a little easier to use the url at https://claude-light.cheme.cmu.edu without a port number. I followed the directions at https://engineerworkshop.com/blog/setup-an-nginx-reverse-proxy-on-a-raspberry-pi-or-any-other-debian-os/amp/. Basically, install nginx:
+#+BEGIN_SRC sh
+sudo cp deploy/claude-geodb.service deploy/claude-geodb.timer /etc/systemd/system
+sudo systemctl daemon-reload
+sudo systemctl enable --now claude-geodb.timer
+#+END_SRC
+
+*** Use nginx as the public front end
+
+nginx handles https, rate limiting and caching, and forwards requests to the server on 127.0.0.1:8000. I followed the directions at https://engineerworkshop.com/blog/setup-an-nginx-reverse-proxy-on-a-raspberry-pi-or-any-other-debian-os/amp/. Basically, install nginx:
 
 #+BEGIN_SRC sh
 sudo apt install nginx
 sudo systemctl start nginx
 #+END_SRC
 
-Then, create /etc/nginx/sites-available/claude-light.cheme.cmu.edu.conf with these contents
-
-#+BEGIN_EXAMPLE
-server {
-	listen 80;
-	server_name claude-light.cheme.cmu.edu;
-	location / {
-	proxy_pass https://claude-light.cheme.cmu.edu:5000;
-	}
-}
-#+END_EXAMPLE
-
-Link it like this:
+Then copy [[./deploy/nginx-claude-light.conf]] to /etc/nginx/sites-available/claude-light.cheme.cmu.edu.conf, and link it like this:
 
 #+BEGIN_SRC sh
-ln -s /etc/nginx/sites-available/example.com.conf /etc/nginx/sites-enabled/example.com.conf﻿
+sudo ln -s /etc/nginx/sites-available/claude-light.cheme.cmu.edu.conf /etc/nginx/sites-enabled/
 #+END_SRC
 
-and reload nginx
+and check and reload nginx
 
 #+BEGIN_SRC sh
-sudo systemctl reload nginx
+sudo nginx -t && sudo systemctl reload nginx
 #+END_SRC
 
 
@@ -310,7 +331,7 @@ sudo certbot --nginx  # answer some interactive questions
 #+END_SRC
 
 That seems to actually be it. The certificate was automatically installed, and now you can visit https://claude-light.cheme.cmu.edu/api.
- 
+
 #+BEGIN_EXAMPLE
 Successfully received certificate.
 Certificate is saved at: /etc/letsencrypt/live/claude-light.cheme.cmu.edu/fullchain.pem
@@ -324,17 +345,17 @@ Successfully deployed certificate for claude-light.cheme.cmu.edu to /etc/nginx/s
 Congratulations! You have successfully enabled HTTPS on https://claude-light.cheme.cmu.edu
 #+END_EXAMPLE
 
-*** TODO An MQTT version
+*** An MQTT version
 
-*** TODO A bluetooth version 
+*** A bluetooth version
 
 Claude-light was built specifically for Internet accessibility. A totally local version would be interesting to learn how to build with Bluetooth and a phone bluetooth app.
 
-*** TODO wifi
+*** wifi
 
 It is probably a good idea to see if we can get a wifi capability. That would provide some portability.
 
-*** TODO add instrument parameters to API
+*** add instrument parameters to API
 
 There are some features in the sensor library we don't use, e.g. flicker-detection https://docs.circuitpython.org/projects/as7341/en/latest/examples.html#flicker-detection, and some things like atime and gain (https://docs.circuitpython.org/projects/as7341/en/latest/api.html#adafruit_as7341.Gain) that could affect measurements.
 
@@ -342,6 +363,6 @@ We could add these to an api to affect how the measurements are made.
 
 We could also add an optional image to the output
 
-*** TODO Better camera mount
+*** Better camera mount
 
 The camera is somewhat floppy at the moment. It could use a better mount. It is a little tricky to figure out what the best thing to do is though. Maybe a 3-d printed case? or something stiffer that can be bolted down to the PCB.

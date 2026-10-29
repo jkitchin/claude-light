@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Claude-Light</h1>
+<p>Claude-Light is a remote-controlled instrument for learning statistics,
+regression, optimization and design of experiments. You set the brightness of a
+red, green and blue LED, and a spectral sensor measures the light at 8 visible
+wavelengths plus clear and near-infrared. There is one real instrument, shared
+by everyone, sitting in a lab at Carnegie Mellon University.</p>
+
+<h2>Run an experiment</h2>
+<div class="grid">
+  <a class="card" href="/gm"><strong>Green Machine #1</strong><br>
+    <span class="muted">One input, one output. Enter a list of green levels
+    and measure the 515nm signal. Start here.</span></a>
+  <a class="card" href="/rgb"><strong>RGB machine</strong><br>
+    <span class="muted">Three inputs, ten outputs. Set the red, green and blue
+    LEDs and see the full spectrum and a camera image.</span></a>
+  <a class="card" href="/session"><strong>Session</strong><br>
+    <span class="muted">Measure one point at a time and build up a data set as
+    you go.</span></a>
+  <a class="card" href="/stats"><strong>Statistics</strong><br>
+    <span class="muted">How many experiments have been run, and where in the
+    world they come from.</span></a>
+</div>
+
+<h2>Use it from code</h2>
+<div class="card">
+  <p>Pass R, G and B levels from 0 to 1 and get JSON back:</p>
+  <pre>curl "https://claude-light.cheme.cmu.edu/api?R=0.12&amp;G=0.45&amp;B=1"</pre>
+  <p>In Python, install the
+  <a href="https://github.com/jkitchin/claude-light-python">claude-light-python</a>
+  package, or use requests directly:</p>
+  <pre>import requests
+resp = requests.get('https://claude-light.cheme.cmu.edu/api',
+                    params={'R': 0.12, 'G': 0.45, 'B': 1})
+resp.json()['out']['515nm']</pre>
+  <p>Each measurement takes about 0.7 s. If the instrument is busy you will
+  get HTTP 503 (queue full) or 429 (you already have measurements waiting) with
+  a <code>Retry-After</code> header; wait and try again. See the
+  <a href="/docs">API docs</a> for all the endpoints.</p>
+</div>
+
+<h2>On GitHub</h2>
+<div class="grid">
+  <a class="card" href="https://github.com/jkitchin/claude-light"><strong>jkitchin/claude-light</strong><br>
+    <span class="muted">The instrument: how it is built, the server code, usage
+    examples and suggested exercises.</span></a>
+  <a class="card" href="https://github.com/jkitchin/claude-light-python"><strong>jkitchin/claude-light-python</strong><br>
+    <span class="muted">A Python interface for Jupyter notebooks, with virtual
+    instruments of increasing complexity and an MCP server for Claude
+    Desktop.</span></a>
+  <a class="card" href="https://github.com/jkitchin/doe-book"><strong>jkitchin/doe-book</strong><br>
+    <span class="muted">Design of experiments, with examples that use
+    Claude-Light.</span></a>
+</div>
+{% endblock %}

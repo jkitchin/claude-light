@@ -1,13 +1,21 @@
-[Unit]                                               
+[Unit]
 Description=Claude Light server
-		                                               
-[Service]                                          
-Type=simple                                       
-Restart=always                                         
-RestartSec=1                                        
-User=jkitchin                                
-ExecStart=/home/jkitchin/.venv/bin/claude                           
-ExecStop=pkill claude
-	                         
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=jkitchin
+WorkingDirectory=/home/jkitchin/claude-light
+# Reads CLAUDE_LIGHT_SECRET and CLAUDE_LIGHT_IP_SALT from here.
+EnvironmentFile=/home/jkitchin/claude-light/.env
+ExecStart=/home/jkitchin/.venv/bin/claude-light
+# Give the instrument time to turn the LED off and release the GPIO pins.
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+
 [Install]
 WantedBy=multi-user.target

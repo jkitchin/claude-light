@@ -1,52 +1,79 @@
-<!DOCTYPE html>
-<html>
-  <style>
-table, th, td {
-  border:1px solid black;
-  border-collapse: collapse;
-}
-</style>
-  <body>
-    <h1>RGB</h1>
+{% extends "base.html" %}
+{% block title %}RGB · Claude-Light{% endblock %}
+{% set colors = {'415nm': '#7a00e6', '445nm': '#1f3cff', '480nm': '#00b8e6',
+                 '515nm': '#2fbf00', '555nm': '#a4d400', '590nm': '#f2c200',
+                 '630nm': '#ff5a00', '680nm': '#d10000', 'clear': '#9a9a9a',
+                 'nir': '#7a3b3b'} %}
+{% block content %}
+<h1>RGB machine</h1>
+<p>See the <a href="https://github.com/jkitchin/claude-light?tab=readme-ov-file#the-rgb-machine">README</a>
+for recommended exercises. Set each level from 0 to 1 and press Measure.</p>
 
-    See <a href="https://github.com/jkitchin/claude-light?tab=readme-ov-file#the-rgb-machine">https://github.com/jkitchin/claude-light?tab=readme-ov-file#the-rgb-machine</a> for recommended exercises.
+<form class="card" method="post" action="/rgb"
+      hx-post="/rgb" hx-target="#result" hx-select="#result" hx-swap="outerHTML">
+  <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap">
+    <div style="flex:1; min-width:260px">
+      {% for name, label in [('R', 'Red'), ('G', 'Green'), ('B', 'Blue')] %}
+      <div class="row">
+        <label for="{{ name }}">{{ label }}</label>
+        <input type="range" min="0" max="1" step="0.01" value="{{ RGB[loop.index0] }}"
+               data-sync="{{ name }}" aria-label="{{ label }} slider">
+        <input type="number" min="0" max="1" step="any" id="{{ name }}"
+               name="{{ name }}" value="{{ RGB[loop.index0] }}">
+      </div>
+      {% endfor %}
+    </div>
+    <div class="swatch" id="swatch"></div>
+  </div>
+  <button type="submit">Measure</button>
+</form>
 
-    <p>    Enter numbers between 0 to 1 in each input box. Press Enter/Return or the Measure button to start the experiment.</p>
-    <br>
-    <br>
-    <form method="post">
-      Red: <input type="text" value={{ RGB[0] }} name="R"/>
-      Green: <input type="text" value={{ RGB[1] }} name="G"/>
-      Blue: <input type="text" value={{ RGB[2] }} name="B"/>
-      <button type="submit">Measure</button>
-      <br>
-      <br>
-      <h2>Results</h2>
-      You should be able to copy and paste this table into Excel.
-      <br>
-      <table style="width:33%">
-	<tr>
-	{% for key in keys %}
-	<th>{{ key }}</th>
-	{% endfor %}
-	</tr>
-	<tr>
-	{% for val in vals %}
-	<th>{{ val }}</th>
-	{% endfor %}
-	</tr>
-      </table>
-      <br>
-      <br>
-      Download: <a download="data.csv" href="data:text/csv;base64,{{ b64 }}" target=_"blank">Download csv file</a>
-    </form>
-
-    <br><br>
+<div id="result">
+  {% if out %}
+  <div class="grid">
+    <div class="card">
+      <h2>Spectrum</h2>
+      <div style="display:flex; align-items:flex-end; gap:6px; height:200px">
+        {% for k, v in out.items() %}
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end">
+          <div class="muted" style="font-size:11px">{{ v }}</div>
+          <div title="{{ k }}: {{ v }}"
+               style="width:100%; height:{{ (100 * v / 65535) | round(1) }}%; min-height:1px; background:{{ colors[k] }}; border-radius:3px 3px 0 0"></div>
+          <div style="font-size:11px">{{ k }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
     {% if imgb64 %}
-    <img src="data:image/png;base64, {{ imgb64 }}" style="transform: scaleY(-1);">
+    <div class="card">
+      <h2>Camera</h2>
+      <img class="camera" alt="Photo of the LED during the measurement"
+           src="data:image/jpeg;base64,{{ imgb64 }}">
+    </div>
     {% endif %}
+  </div>
 
-    <br><br>
-    Please report issues at <a href="https://github.com/jkitchin/claude-light/issues">https://github.com/jkitchin/claude-light/issues</a>.
-  </body>
-</html>
+  <div class="card">
+    <h2>Results</h2>
+    <p class="muted">You should be able to copy and paste this table into Excel.</p>
+    <div class="table-scroll">
+      <table>
+        <tr>{% for key in keys %}<th>{{ key }}</th>{% endfor %}</tr>
+        <tr>{% for val in vals %}<td>{{ val }}</td>{% endfor %}</tr>
+      </table>
+    </div>
+    <p><a download="data.csv" href="data:text/csv;base64,{{ b64 }}">Download csv file</a></p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  // Preview the LED color as the sliders move.
+  function paint() {
+    const v = (n) => Math.round(255 * Math.min(1, Math.max(0, +document.getElementById(n).value || 0)));
+    document.getElementById('swatch').style.background = `rgb(${v('R')}, ${v('G')}, ${v('B')})`;
+  }
+  document.addEventListener('rgbchange', paint);
+  paint();
+</script>
+{% endblock %}

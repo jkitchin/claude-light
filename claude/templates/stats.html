@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Statistics · Claude-Light{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js" defer></script>
+<script src="/static/stats.js" defer></script>
+{% endblock %}
+{% block content %}
+<h1>Usage statistics</h1>
+
+<div class="kpis">
+  <div class="card kpi"><div class="value" id="k-exp">…</div><div class="label">experiments</div></div>
+  <div class="card kpi"><div class="value" id="k-users">…</div><div class="label">unique users (all time)</div></div>
+  <div class="card kpi"><div class="value" id="k-countries">…</div><div class="label">countries</div></div>
+  <div class="card kpi"><div class="value" id="k-latency">…</div><div class="label">measurement time p50 / p95, last 7 days</div></div>
+  <div class="card kpi"><div class="value" id="k-wait">…</div><div class="label">queue wait p95, last 7 days</div></div>
+</div>
+
+<div class="card controls">
+  <label>From <input type="date" id="f-from"></label>
+  <label>To <input type="date" id="f-to"></label>
+  <label>Source
+    <select id="f-origin"><option value="">all</option></select>
+  </label>
+  <span id="f-country-chip" hidden>Country: <strong id="f-country"></strong>
+    <button type="button" id="f-country-clear" style="padding:2px 10px">×</button></span>
+  <span class="muted" id="f-summary"></span>
+</div>
+
+<div class="card">
+  <div class="controls">
+    <h2 style="margin:0">Where experiments come from</h2>
+    <label><input type="radio" name="layer" value="dots" checked> locations</label>
+    <label><input type="radio" name="layer" value="countries"> countries</label>
+    <span class="muted">Click a dot or country to filter the charts below.</span>
+  </div>
+  <div id="map" class="chart" style="min-height:440px"></div>
+</div>
+
+<div class="card">
+  <h2>Experiments per day</h2>
+  <div id="timeseries" class="chart"></div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>By source</h2>
+    <div id="origins" class="chart"></div>
+  </div>
+  <div class="card">
+    <h2>Top countries</h2>
+    <div class="table-scroll" style="max-height:340px; overflow-y:auto">
+      <table id="top-countries"><thead><tr><th style="text-align:left">Country</th><th>Experiments</th><th>Users (all time)</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Mean measurement time per day</h2>
+    <div id="latency" class="chart"></div>
+  </div>
+  <div class="card">
+    <h2>Measurement time, last 7 days</h2>
+    <div id="latency-hist" class="chart"></div>
+  </div>
+</div>
+
+<p class="muted" id="generated"></p>
+<p class="muted">Locations come from IP addresses using the
+<a href="https://db-ip.com">DB-IP</a> Lite database (CC BY 4.0). IP addresses
+are not stored; a one-way hash is used to count unique users.
+<a href="/data/export.csv">Download the anonymized data (CSV)</a>.</p>
+{% endblock %}

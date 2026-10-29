@@ -4,20 +4,34 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude"
+version = "2.0.0"
 authors = [{name = "John Kitchin", email = "jkitchin@andrew.cmu.edu"}]
+requires-python = ">=3.11"
 dependencies = [
-	     "waitress",
-	     "Adafruit-Blinka",
-	     "adafruit-circuitpython-as7341",
-	     "lgpio",
-	     "gpiozero",
-	     "flask",
-	     "jsonlines",
-	     "matplotlib",
-	     "pandas",
+	     "fastapi",
+	     "uvicorn[standard]",
+	     "jinja2",
+	     "python-multipart",
+	     "itsdangerous",
+	     "maxminddb",
 	     "python-dotenv"]
 license = {text = "MIT"}
-dynamic = ["version"]
+
+[project.optional-dependencies]
+# The hardware libraries, only needed on the Pi. picamera2 comes from apt
+# (python3-picamera2), so the venv needs --system-site-packages.
+pi = [
+   "Adafruit-Blinka",
+   "adafruit-circuitpython-as7341",
+   "lgpio",
+   "gpiozero"]
+test = ["pytest", "httpx"]
 
 [project.scripts]
-claude = "claude.app:run"
+claude-light = "claude.app:run"
+
+[tool.setuptools]
+packages = ["claude"]
+
+[tool.setuptools.package-data]
+claude = ["templates/*.html", "static/*"]

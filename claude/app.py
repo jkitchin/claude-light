@@ -1,326 +1,296 @@
+"""The Claude-Light web server.
+
+The URLs and response formats of /api, /csv, /gm, /rgb, /session and
+/statistics are the same as the original Flask app, so existing scripts,
+notebooks and spreadsheets keep working.
+"""
+
+import asyncio
 import base64
-import os
-from werkzeug.middleware.proxy_fix import ProxyFix
-from flask import Flask, request, render_template, session, flash, redirect, make_response
-from gpiozero import RGBLED 
-import time
-import board
-from adafruit_as7341 import AS7341
-import jsonlines
-import matplotlib.pyplot as plt
-import datetime
-import pandas as pd
-from retry import retry
-import requests
-import subprocess
-
-i2c = board.I2C()  # uses board.SCL and board.SDA
-sensor = AS7341(i2c)
-
-app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
-
-from dotenv import load_dotenv
-load_dotenv()
-
-app.secret_key = os.environ.get('CLAUDE_LIGHT_SECRET', 'claude-light')
-
+import csv
 import io
-from picamera2 import Picamera2
-pc = Picamera2()
+import logging
+import time
+from contextlib import asynccontextmanager
+from pathlib import Path
 
-# It seems like there could be some issues with concurrent requests that come
-# too fast, resulting in GPIO busy errors. I only see this in Google sheets so
-# far, where it seems all the requests come in at once. This adds a retry
-# option. The numbers are all heuristic. I put a "largish" number of retries to
-# avoid a potential infinite loop.
-@retry(tries=50, delay=1)    
-def measure(R, G, B, origin=None):
-    """Perform a measurement at the RGB settings. Returns a dictionary of data
-    that includes the measurements, inputs, time, elapsed time and remote ip
-    address.
+from fastapi import FastAPI, Form, Query, Request
+from fastapi.responses import (HTMLResponse, JSONResponse, PlainTextResponse,
+                               RedirectResponse, StreamingResponse)
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 
-    origin is just a string indicating where the measure call came from.
-    """
-    t0 = time.time()
-    
-    led = RGBLED(red=19, green=13, blue=12)
-    led.color = (R, G, B)
-    
-    data = list(sensor.all_channels) + [sensor.channel_clear, sensor.channel_nir]
-    
-    results = {        
-        'in': [R, G, B],
-        'out': {key:val for key, val in
-                zip([
-                    '415nm', '445nm', '480nm',
-                    '515nm', '555nm', '590nm',
-                    '630nm', '680nm', 'clear',
-                    'nir'], data)}}
+from . import config
+from .geo import Geo
+from .instrument import (CHANNELS, FakeInstrument, HardwareInstrument,
+                         InstrumentService, QueueFull, TooManyForIP)
+from .stats import StatsCache
+from .store import CH_COLS, Store, connect
 
-    led.color = (0, 0, 0)
-    # I explicitly close so that it is clean to restart. Otherwise, it
-    # seems like the gpio ports are in use and you have to
-    # reboot. there might be some cli way to clear it, but I don't
-    # know what it is.
-    led.close()
+log = logging.getLogger(__name__)
 
-    # I had to modify this when I started using nginx. That was making the
-    # remote_addr all be 127.0.0.1. This seems to get a different IP than that.
-    # I only want this as a way to track individual users, and see where in the
-    # world they are from (see /statistics). This also required updating the
-    # nginx conf. [[/etc/nginx/sites-available/claude-light.cheme.cmu.edu.conf]]
-    ip = request.headers.get('X-Real-Ip', request.remote_addr)
-    
-    
-    with jsonlines.open(os.path.expanduser('~/results.jsonl'), 'a') as f:
-        d = results.copy()
-        d.update({'t0': t0,
-                  'elapsed_time': time.time() - t0,
-                  'ip': ip,
-                  'origin': origin})
-        f.write(d)
-
-    return results
+HERE = Path(__file__).parent
+templates = Jinja2Templates(directory=HERE / 'templates')
 
 
-@app.route('/')
-def home():
-    return redirect('https://github.com/jkitchin/claude-light?tab=readme-ov-file#Usage', code=302)
+def clamp(x):
+    return min(max(float(x), 0.0), 1.0)
 
 
-@app.route('/api')
-def api():
-    
-    R = float(request.args.get('R') or 0)
-    R = min(max(R, 0.0), 1.0)
-    
-    G = float(request.args.get('G') or 0)
-    G = min(max(G, 0.0), 1.0)
-    
-    B = float(request.args.get('B') or 0)
-    B = min(max(B, 0.0), 1.0)
-    
-    return measure(R, G, B, origin='api')
+def to_csv(rows):
+    buf = io.StringIO()
+    csv.writer(buf, lineterminator='\n').writerows(rows)
+    return buf.getvalue()
 
-@app.route('/csv', methods=['GET', 'POST'])
-def csv(G=0):
-    """Return the 515nm result as a number.
-    This function is for use in Google sheets.
-    """
-    
-    G = float(request.args.get('G', 0))
 
-    result = measure(0, G, 0)['out']['515nm']
-    time.sleep(1)
-    resp = make_response(str(result))
-    resp.mimetype='text/csv'
-    return resp
+def b64(data):
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    return base64.b64encode(data).decode('utf-8')
 
-@app.route('/gm', methods=['GET', 'POST'])
-def greenmachine1():
-    """This is a form for browser use. It is not the most secure, and has none
-    of the WTFform protections. It is unclear how much that matters.
-    """
-    
-    if request.method == 'POST':
+
+def client_ip(request):
+    # nginx sets X-Real-IP; without it we are being reached directly.
+    return request.headers.get('x-real-ip') or request.client.host
+
+
+def wants_html(request):
+    return 'text/html' in request.headers.get('accept', '')
+
+
+def create_app(instrument=None, db_path=None, geo_path=None):
+    if not config.SECRET:
+        raise RuntimeError('Set CLAUDE_LIGHT_SECRET in the environment or '
+                           '.env (or CLAUDE_LIGHT_FAKE=1 for development).')
+    if instrument is None:
+        instrument = FakeInstrument(0.65) if config.FAKE else HardwareInstrument()
+    db_path = Path(db_path or config.DB_PATH)
+
+    @asynccontextmanager
+    async def lifespan(app):
+        store = Store(db_path, Geo(geo_path or config.GEO_DB), config.IP_SALT)
+        store.start()
+        service = InstrumentService(instrument, maxsize=config.QUEUE_MAX,
+                                    per_ip=config.PER_IP_MAX,
+                                    on_result=store.add)
+        await service.start()
+        app.state.store = store
+        app.state.service = service
+        app.state.stats = StatsCache(db_path, ttl=config.STATS_TTL)
+        yield
+        await service.stop()
+        store.stop()
+
+    app = FastAPI(title='Claude-Light', lifespan=lifespan, docs_url='/docs',
+                  redoc_url=None)
+    app.add_middleware(SessionMiddleware, secret_key=config.SECRET,
+                       same_site='lax')
+    app.mount('/static', StaticFiles(directory=HERE / 'static'), name='static')
+
+    def render(request, name, status_code=200, headers=None, **context):
+        context.setdefault('messages', [])
+        return templates.TemplateResponse(request, name, context,
+                                          status_code=status_code,
+                                          headers=headers)
+
+    # ---- errors ------------------------------------------------------------
+
+    def busy(request, status, message, retry_after):
+        headers = {'Retry-After': str(retry_after)}
+        if wants_html(request):
+            return render(request, 'busy.html', status_code=status,
+                          headers=headers, message=message,
+                          retry_after=retry_after)
+        return JSONResponse({'error': message}, status_code=status,
+                            headers=headers)
+
+    @app.exception_handler(QueueFull)
+    async def queue_full(request, exc):
+        return busy(request, 503, 'Claude-Light is busy. Please try again in '
+                    'a few seconds.', 5)
+
+    @app.exception_handler(asyncio.TimeoutError)
+    async def timed_out(request, exc):
+        return busy(request, 503, 'The measurement queue is long right now. '
+                    'Please try again shortly.', 10)
+
+    @app.exception_handler(TooManyForIP)
+    async def too_many(request, exc):
+        return busy(request, 429, 'You already have measurements waiting. '
+                    'Please wait for them to finish.', 2)
+
+    @app.exception_handler(ValueError)
+    async def bad_value(request, exc):
+        return JSONResponse({'error': 'R, G and B must be numbers from 0 to 1.'},
+                            status_code=400)
+
+    async def measure(request, R, G, B, origin, image=False):
+        return await request.app.state.service.measure(
+            R, G, B, origin, client_ip(request), image=image,
+            timeout=config.TIMEOUT)
+
+    # ---- the instrument API --------------------------------------------------
+
+    @app.get('/api')
+    async def api(request: Request, R: str = '', G: str = '', B: str = ''):
+        """Measure at the given RGB settings (0 to 1). Returns
+        {"in": [R, G, B], "out": {channel: counts}}."""
+        result = await measure(request, clamp(R or 0), clamp(G or 0),
+                               clamp(B or 0), 'api')
+        return result
+
+    @app.api_route('/csv', methods=['GET', 'POST'])
+    async def csv_(request: Request, G: str = '0'):
+        """The 515nm reading as plain text, for Google Sheets IMPORTDATA."""
+        result = await measure(request, 0, clamp(G or 0), 0, 'csv')
+        return PlainTextResponse(str(result['out']['515nm']),
+                                 media_type='text/csv')
+
+    # ---- browser pages -------------------------------------------------------
+
+    @app.get('/', response_class=HTMLResponse)
+    async def home(request: Request):
+        return render(request, 'home.html')
+
+    @app.get('/about', response_class=HTMLResponse)
+    async def about(request: Request):
+        return render(request, 'about.html')
+
+    @app.get('/gm', response_class=HTMLResponse)
+    async def gm_form(request: Request):
+        return render(request, 'green-machine1.html', data=(), imgb64=None,
+                      G='')
+
+    @app.post('/gm', response_class=HTMLResponse)
+    async def gm(request: Request, G: str = Form('')):
         try:
-            Gs = [v.strip() or '0' for v in request.form['G'].split(',')]
-            Gin = [min(max(float(x), 0.0), 1.0) for x in Gs]
+            Gin = [clamp(v.strip() or '0') for v in G.split(',')]
         except ValueError:
-            flash('There was an error parsing your input. Try again. Make sure they are proper floats separated by commas.')
-            return render_template("green-machine1.html",                           
-                                   data=())
-        
-        Gout = [measure(0, x, 0, origin='greenmachine1')['out']['515nm'] for x in Gin]
-
+            return render(request, 'green-machine1.html', data=(),
+                          imgb64=None, G=G, messages=[
+                              'There was an error parsing your input. Try '
+                              'again. Make sure they are proper floats '
+                              'separated by commas.'])
+        if len(Gin) > config.GM_MAX_POINTS:
+            return render(request, 'green-machine1.html', data=(),
+                          imgb64=None, G=G, messages=[
+                              f'Please use at most {config.GM_MAX_POINTS} '
+                              'values at a time.'])
+        Gout, img = [], None
+        for i, x in enumerate(Gin):
+            last = i == len(Gin) - 1
+            result = await measure(request, 0, x, 0, 'greenmachine1',
+                                   image=last)
+            Gout.append(result['out']['515nm'])
+            img = result.get('image') if last else img
         output = list(zip(Gin, Gout))
-        csv = '\n'.join([','.join([str(x) for x in row]) for row in output])
-        b64 = base64.b64encode(csv.encode('utf-8')).decode("utf8")
+        return render(request, 'green-machine1.html', data=output, G=G,
+                      b64=b64(to_csv(output)),
+                      imgb64=b64(img) if img else None)
 
-        pc.start()
-        data = io.BytesIO()
-        pc.capture_file(data, format='png')
-        imgb64 = base64.b64encode(data.getvalue()).decode('utf-8')
+    @app.get('/rgb', response_class=HTMLResponse)
+    async def rgb_form(request: Request):
+        return render(request, 'rgb.html', RGB=(0, 0, 0), imgb64=None)
 
-        
-        return render_template("green-machine1.html",
-                               data=output,
-                               imgb64=imgb64,
-                               b64=b64)
-    # this is from GET
-    return render_template("green-machine1.html",
-                           imgb64=None,
-                           data=())
-
-
-@app.route('/rgb', methods=['GET', 'POST'])
-def rgbmachine():
-    """This is a form for browser use. It is not the most secure, and has none
-    of the WTFform protections. It is unclear how much that matters.
-    """
-    
-    if request.method == 'POST':        
-        R = min(max(float(request.form['R'] or 0), 0.0), 1.0)
-        G = min(max(float(request.form['G'] or 0), 0.0), 1.0)
-        B = min(max(float(request.form['B'] or 0), 0.0), 1.0)
-
-        out = measure(R, G, B, origin='rgb')['out']
-        keys = ['R', 'G', 'B'] + list(out.keys())
+    @app.post('/rgb', response_class=HTMLResponse)
+    async def rgb(request: Request, R: str = Form(''), G: str = Form(''),
+                  B: str = Form('')):
+        R, G, B = clamp(R or 0), clamp(G or 0), clamp(B or 0)
+        result = await measure(request, R, G, B, 'rgb', image=True)
+        out = result['out']
+        keys = ['R', 'G', 'B'] + list(out)
         vals = [R, G, B] + list(out.values())
-        
-        csv = '\n'.join([','.join([str(x) for x in row]) for row in zip(keys, vals)])
-        b64 = base64.b64encode(csv.encode('utf-8')).decode("utf8")
+        img = result.get('image')
+        return render(request, 'rgb.html', RGB=(R, G, B), keys=keys,
+                      vals=vals, out=out, b64=b64(to_csv(zip(keys, vals))),
+                      imgb64=b64(img) if img else None)
 
-        # Get a picture
-        led = RGBLED(red=19, green=18, blue=12)
-        led.color = (R, G, B)
-    
+    @app.get('/session', response_class=HTMLResponse)
+    async def session_form(request: Request):
+        return render(request, 'session.html',
+                      rows=request.session.get('ip', []), b64=None)
 
-        pc.start()
-        data = io.BytesIO()
-        pc.capture_file(data, format='png')
-        imgb64 = base64.b64encode(data.getvalue()).decode('utf-8')
-    
+    @app.post('/session', response_class=HTMLResponse)
+    async def session(request: Request, G: str = Form('')):
+        Gin = clamp(G or 0)
+        result = await measure(request, 0, Gin, 0, 'session')
+        rows = request.session.get('ip', []) + [[Gin, result['out']['515nm']]]
+        request.session['ip'] = rows
+        return render(request, 'session.html', rows=rows, b64=b64(to_csv(rows)))
 
-        led.color = (0, 0, 0)
-        # I explicitly close so that it is clean to restart. Otherwise, it
-        # seems like the gpio ports are in use and you have to
-        # reboot. there might be some cli way to clear it, but I don't
-        # know what it is.
-        led.close()
-        
-        return render_template("rgb.html",
-                               keys=keys, vals=vals,
-                               imgb64=imgb64,
-                               RGB=(R,G,B),
-                               b64=b64)
-    # this is from GET
-    return render_template("rgb.html",
-                           RGB=(0, 0, 0),
-                           imgb64=None,
-                           data=())
+    @app.get('/clear_session')
+    async def clear_session(request: Request):
+        request.session.pop('ip', None)
+        return RedirectResponse('/session', status_code=303)
 
+    # ---- statistics and data -------------------------------------------------
 
-@app.route('/about')
-def about():
-    return render_template("about.html")
+    @app.get('/statistics', response_class=HTMLResponse)
+    @app.get('/stats', response_class=HTMLResponse)
+    async def stats_page(request: Request):
+        return render(request, 'stats.html')
 
+    @app.get('/stats/data.json')
+    async def stats_data(request: Request):
+        data = await asyncio.to_thread(request.app.state.stats.get)
+        return JSONResponse(data, headers={
+            'Cache-Control': f'public, max-age={int(config.STATS_TTL)}'})
 
-@app.route('/session', methods=['GET', 'POST'])
-def sesh():
-    """This is a form for browser use. It is not the most secure, and has none
-    of the WTFform protections. It is unclear how much that matters.
-    """
-    
-    if request.method == 'POST':
+    @app.get('/status')
+    async def status(request: Request):
+        """Live instrument status: queue depth and the last measurement time."""
+        s = request.app.state.service
+        return {'busy': s.busy, 'queue': s.depth, 'last_t0': s.last_t0,
+                'max_queue': s.maxsize}
 
-        Gin = min(max(float(request.form['G'] or 0), 0.0), 1.0)
-        Gout = measure(0, Gin, 0, origin='session')['out']['515nm']
+    @app.get('/health')
+    async def health():
+        return {'ok': True}
 
-        if 'ip' in session:
-            session['ip'] += [[Gin, Gout]]
-        else:
-            session['ip'] =[[Gin, Gout]]
+    @app.get('/health/instrument')
+    async def health_instrument(request: Request):
+        """Reports on the most recent measurement; does not measure."""
+        s = request.app.state.service
+        ok = s.last_ok is not False
+        return JSONResponse({'ok': ok, 'last_t0': s.last_t0},
+                            status_code=200 if ok else 503)
 
-        csv = '\n'.join([','.join([str(x) for x in row]) for row in session['ip']])
-        b64 = base64.b64encode(csv.encode('utf-8')).decode("utf8")
+    @app.get('/data/export.csv')
+    async def export(since: float = Query(0, description='Unix time'),
+                     until: float = Query(None, description='Unix time')):
+        """Anonymized measurements as CSV (no IP addresses)."""
+        cols = (['t0', 'elapsed', 'origin', 'R', 'G', 'B'] + CH_COLS
+                + ['ip_hash', 'country', 'country_name', 'region', 'city'])
+        header = (['t0', 'elapsed', 'origin', 'R', 'G', 'B'] + CHANNELS
+                  + ['user', 'country', 'country_name', 'region', 'city'])
 
-        return render_template("session.html", b64=b64)
+        def rows():
+            con = connect(db_path, readonly=True)
+            try:
+                cur = con.execute(
+                    f'SELECT {", ".join(cols)} FROM measurements '
+                    'WHERE t0 >= ? AND t0 < ? ORDER BY t0',
+                    (since, until if until is not None else time.time() + 1))
+                yield to_csv([header])
+                while chunk := cur.fetchmany(5000):
+                    yield to_csv(chunk)
+            finally:
+                con.close()
 
-    # this is from GET
-    return render_template("session.html", b64=None)
+        return StreamingResponse(rows(), media_type='text/csv', headers={
+            'Content-Disposition': 'attachment; filename="claude-light.csv"'})
 
-@app.route('/clear_session')
-def clear_sesh():
-    del session['ip']
-    return render_template("session.html")
-
-
-
-
-@app.route('/statistics')
-def stats():
-    """Return some results on usage."""
-    N = 0
-    ips = set()
-
-    timestamps = []
-    elapsed_times = []
-    with jsonlines.open(os.path.expanduser('~/results.jsonl')) as f:
-        for entry in f:
-            N += 1
-            ips.add(entry.get('ip', None))
-            timestamps += [datetime.datetime.fromtimestamp(entry['t0'])]
-            elapsed_times += [entry['elapsed_time']]
-
-    img = io.BytesIO()
-    plt.plot(timestamps, elapsed_times, 'b.')
-    plt.xlabel('time')
-    plt.ylabel('Elapsed measurement time (sec)')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig(img, format='png')
-    imgb64 = base64.b64encode(img.getvalue()).decode('utf-8')
-    plt.close()
-
-    counts = {}
-    for ts in timestamps:
-        m = (ts.year, ts.month, ts.day)
-        if m in counts:
-            counts[m] += 1
-        else:
-            counts[m] = 1
-
-    plt.plot([datetime.datetime(*ts) for ts in counts],
-             counts.values())
-    plt.ylim([0, max(counts.values())])
-    plt.xlabel('date')
-    plt.ylabel('count')
-    img = io.BytesIO()
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig(img, format='png')
-    plt.close()
-    img2b64 = base64.b64encode(img.getvalue()).decode('utf-8')
-
-    ips = list(set(ips))
-    req = requests.post('https://ipinfo.io/tools/summarize-ips?cli=1',
-                        data={'ips': ips})
-
-#    try:
-#        url = req.json()['reportUrl']
-#    except:
-#        url = "<error>"
-
-    # [2024-10-05 Sat] this seems dumb, but I guess there is a limit of 1000 ips
-    # in the API, but not when I run it this way. I hit 1000 IPs, and it seemed
-    # to quit working
-    with open(os.path.expanduser('~/ips'), 'w') as f:
-        for ip in ips:
-            f.write(f'{ip}\n')
-
-    cmd = 'cat ~/ips | curl -s -XPOST --data-binary @- "ipinfo.io/tools/summarize-ips?cli=1" | jq .reportUrl'
-    url = subprocess.check_output(cmd, shell=True, text=True)        
-    
-
-    return f'''<html><body>
-    {N} experiments run by {len(ips)} users. <a href={url}>Map of IP addresses</a>
-    <br>
-    <br>
-    <img src="data:image/png;base64, {imgb64}">
-    <br>
-    <br>
-    <img src="data:image/png;base64, {img2b64}">
-
-    </body>
-    </html>'''
+    return app
 
 
 def run():
-    """This is used to run the server."""
-    from waitress import serve
-    serve(app, host='0.0.0.0', port=5000)
-    
+    """Entry point for the `claude-light` command (used by systemd)."""
+    import uvicorn
+    logging.basicConfig(level=logging.INFO)
+    uvicorn.run(create_app(), host='127.0.0.1', port=8000,
+                proxy_headers=True, forwarded_allow_ips='127.0.0.1')
+
+
 if __name__ == '__main__':
     run()

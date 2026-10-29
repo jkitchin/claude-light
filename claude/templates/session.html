@@ -1,41 +1,54 @@
-<!DOCTYPE html>
-<html>
-  <style>
-table, th, td {
-  border:1px solid black;
-  border-collapse: collapse;
-}
-</style>
-  <body>
-    <h1>session</h1>
+{% extends "base.html" %}
+{% block title %}Session · Claude-Light{% endblock %}
+{% block content %}
+<h1>Session</h1>
 
-    Enter numbers between 0 to 1 in the input box. Press Enter/Return or the Measure button to start the experiment.
-    <br>
-    <br>
-    <form method="post">
-      Green: <input type="text" name="G"/>
-      <button type="submit">Measure</button>
-      <br>
-      <br>
+<form class="card" method="post" action="/session"
+      hx-post="/session" hx-target="#result" hx-select="#result" hx-swap="outerHTML">
+  <p>Enter a number between 0 and 1. Press Enter/Return or the Measure button
+  to add a point to your data set.</p>
+  <div class="row">
+    <label for="G">Green</label>
+    <input type="number" id="G" name="G" min="0" max="1" step="any" style="width:120px">
+    <button type="submit">Measure</button>
+  </div>
+</form>
+
+<div id="result">
+  {% if rows %}
+  <div class="grid">
+    <div class="card">
       <h2>Results</h2>
-      You should be able to copy and paste this table into Excel.
-      <table style="width:33%">
-	<tr><th>Input</th><th>Output</th></tr>
-	{% for row in session["ip"] %}
-	<tr><th>{{ row[0] }}</th><th>{{ row[1] }}</th></tr>
-	{% endfor %}
+      <p class="muted">You should be able to copy and paste this table into Excel.</p>
+      <table>
+        <tr><th>Input</th><th>Output</th></tr>
+        {% for row in rows %}
+        <tr><td>{{ row[0] }}</td><td>{{ row[1] }}</td></tr>
+        {% endfor %}
       </table>
-    </form>
-
-    <br>
-    <br>
-    {% if b64 %}
-    Download: <a download="data.csv" href="data:text/csv;base64,{{ b64 }}" target=_"blank">Download csv file</a>
-    {% endif %}
-    
-    <br>
-    <br>
-    <a href="/clear_session">Clear results</a>
-    
-  </body>
-</html>
+      <p>
+        {% if b64 %}<a download="data.csv" href="data:text/csv;base64,{{ b64 }}">Download csv file</a> ·{% endif %}
+        <a href="/clear_session">Clear results</a>
+      </p>
+    </div>
+    <div class="card">
+      <h2>Plot</h2>
+      {# A small inline SVG scatter plot; no charting library needed. #}
+      {% set ymax = (rows | map(attribute=1) | max) or 1 %}
+      <svg viewBox="0 0 320 220" width="100%" role="img" aria-label="515nm output versus green input">
+        <line x1="40" y1="190" x2="310" y2="190" stroke="currentColor" opacity="0.4"/>
+        <line x1="40" y1="10" x2="40" y2="190" stroke="currentColor" opacity="0.4"/>
+        <text x="175" y="214" text-anchor="middle" font-size="12" fill="currentColor">G input</text>
+        <text x="12" y="100" font-size="12" fill="currentColor" transform="rotate(-90 12 100)" text-anchor="middle">515nm</text>
+        <text x="40" y="204" font-size="10" fill="currentColor" text-anchor="middle">0</text>
+        <text x="310" y="204" font-size="10" fill="currentColor" text-anchor="middle">1</text>
+        <text x="36" y="14" font-size="10" fill="currentColor" text-anchor="end">{{ ymax }}</text>
+        {% for row in rows %}
+        <circle cx="{{ 40 + 270 * row[0] }}" cy="{{ 190 - 180 * row[1] / ymax }}" r="4" fill="var(--accent)"/>
+        {% endfor %}
+      </svg>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

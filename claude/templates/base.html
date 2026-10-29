@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Claude-Light{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="dot"></span>Claude-Light</a>
+    <nav>
+      <a href="/rgb">RGB</a>
+      <a href="/gm">Green Machine</a>
+      <a href="/session">Session</a>
+      <a href="/stats">Statistics</a>
+      <a href="/about">About</a>
+    </nav>
+    <span class="status" id="status" title="Instrument queue">…</span>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <a href="https://github.com/jkitchin/claude-light">GitHub</a> ·
+    <a href="https://github.com/jkitchin/claude-light/issues">Report an issue</a> ·
+    <a href="/docs">API docs</a>
+  </footer>
+</body>
+</html>

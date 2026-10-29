@@ -1,0 +1,7 @@
+[Unit]
+Description=Update the Claude-Light GeoIP database
+
+[Service]
+Type=oneshot
+User=jkitchin
+ExecStart=/home/jkitchin/claude-light/scripts/update_geodb.sh --restart

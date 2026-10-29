@@ -1,52 +1,45 @@
-<!DOCTYPE html>
-<html>
-  <style>
-table, th, td {
-  border:1px solid black;
-  border-collapse: collapse;
-}
-</style>
-  <body>
-    <h1>Green Machine #1</h1>
-    See <a href="https://github.com/jkitchin/claude-light?tab=readme-ov-file#the-green-machine">https://github.com/jkitchin/claude-light?tab=readme-ov-file#the-green-machine</a> for suggested exercises. <br><br>
-    
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul class=flashes>
-    {% for message in messages %}
-      <li><font color="red">{{ message }}</font></li>
-    {% endfor %}
-    </ul>
-  {% endif %}
-    {% endwith %}
-    
-    Enter numbers between 0 to 1 in the input box. Separate the numbers by commas. For example, 0, 0.1, 0.2. Press Enter/Return or the Measure button to start the experiment.
-    <br>
-    <br>
-    <form method="post">
-      Green: <input type="text" name="G"/>
-      <button type="submit">Measure</button>
-      <br>
-      <br>
+{% extends "base.html" %}
+{% block title %}Green Machine · Claude-Light{% endblock %}
+{% block content %}
+<h1>Green Machine #1</h1>
+<p>See the <a href="https://github.com/jkitchin/claude-light?tab=readme-ov-file#the-green-machine">README</a>
+for suggested exercises.</p>
+
+<form class="card" method="post" action="/gm"
+      hx-post="/gm" hx-target="#result" hx-select="#result" hx-swap="outerHTML">
+  <p>Enter numbers between 0 and 1, separated by commas, for example
+  <code>0, 0.1, 0.2</code>. Press Enter/Return or the Measure button to start
+  the experiment. Each value takes about a second.</p>
+  <div class="row">
+    <label for="G">Green</label>
+    <input type="text" id="G" name="G" value="{{ G }}" placeholder="0, 0.1, 0.2">
+    <button type="submit">Measure</button>
+  </div>
+</form>
+
+<div id="result">
+  {% for message in messages %}<div class="flash">{{ message }}</div>{% endfor %}
+  {% if data %}
+  <div class="grid">
+    <div class="card">
       <h2>Results</h2>
-      You should be able to copy and paste this table into Excel.
-      <table style="width:33%">
-	<tr><th>Input</th><th>Output</th></tr>
-	{% for row in data %}
-	<tr><th>{{ row[0] }}</th><th>{{ row[1] }}</th></tr>
-	{% endfor %}
+      <p class="muted">You should be able to copy and paste this table into Excel.</p>
+      <table>
+        <tr><th>Input</th><th>Output</th></tr>
+        {% for row in data %}
+        <tr><td>{{ row[0] }}</td><td>{{ row[1] }}</td></tr>
+        {% endfor %}
       </table>
-      <br>
-      <br>
-      Download: <a download="data.csv" href="data:text/csv;base64,{{ b64 }}" target=_"blank">Download csv file</a>
-    </form>
-
-    <br><br>
+      <p><a download="data.csv" href="data:text/csv;base64,{{ b64 }}">Download csv file</a></p>
+    </div>
     {% if imgb64 %}
-    <img src="data:image/png;base64, {{ imgb64 }}" style="transform: scaleY(-1);">
+    <div class="card">
+      <h2>Camera</h2>
+      <img class="camera" alt="Photo of the LED during the last measurement"
+           src="data:image/jpeg;base64,{{ imgb64 }}">
+    </div>
     {% endif %}
-
-    <br><br>
-    Please report issues at <a href="https://github.com/jkitchin/claude-light/issues">https://github.com/jkitchin/claude-light/issues</a>.
-  </body>
-</html>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

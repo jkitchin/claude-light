@@ -3,3 +3,6 @@ __pycache__
 results.jsonl
 *.egg-info
 .env
+.venv
+*.db
+*.mmdb
