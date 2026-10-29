@@ -122,6 +122,28 @@ def measure(R=0, G=0, B=0):
       interactive API documentation.</li>
     </ul>
 
+    <h2 id="agents">Using Claude-Light with an AI agent</h2>
+    <p>The repository includes
+    <a href="https://agentskills.io/specification">agent skills</a>, instructions that
+    teach AI coding agents (Claude Code, Codex, VS Code with Copilot, Cursor, Gemini CLI,
+    OpenCode) how to use Claude-Light well: measuring one point at a time, waiting when
+    the instrument is busy, subtracting background, and choosing good designs. Install
+    one into your project with <a href="https://github.com/jkitchin/knowhow">knowhow</a>
+    (you need <a href="https://docs.astral.sh/uv/">uv</a>) or
+    <a href="https://github.com/vercel-labs/skills">npx skills</a>:</p>
+    <pre>uvx --from git+https://github.com/jkitchin/knowhow knowhow add jkitchin/claude-light --skill claude-light
+
+# or, with Node.js
+npx skills add jkitchin/claude-light --skill claude-light</pre>
+    <p>Add <code>-g</code> to install it for all your projects. Then ask your agent
+    things like "measure the 515nm response at 11 green levels and fit a line" or "find
+    R, G and B that give 25000 on the 480, 515 and 630nm channels". Use
+    <code>knowhow upgrade</code> later to get updates.</p>
+    <p>A second skill, <code>claude-light-server</code>, is for people who run their
+    own Claude-Light instrument. The
+    <a href="https://github.com/jkitchin/claude-light/tree/main/skills">skills folder</a>
+    has both.</p>
+
     <h2 id="more">More exercises</h2>
     <p>The <a href="https://github.com/jkitchin/claude-light/blob/main/exercises.org">exercise list</a>
     goes further: detection limits, interpolation, uncertainty

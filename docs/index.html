@@ -64,6 +64,15 @@ resp.json()['out']['515nm']</pre>
       outputs, and what to do when the instrument is busy.</p>
     </div>
 
+    <h2>Use it with an AI agent</h2>
+    <div class="card">
+      <p>Install the Claude-Light skill so Claude Code, Codex, Copilot, Cursor and
+      other agents know how to run experiments on it:</p>
+      <pre>uvx --from git+https://github.com/jkitchin/knowhow knowhow add jkitchin/claude-light --skill claude-light</pre>
+      <p>or <code>npx skills add jkitchin/claude-light --skill claude-light</code>.
+      See the <a href="guide.html#agents">guide</a> for more.</p>
+    </div>
+
     <h2>Learn more</h2>
     <div class="grid">
       <a class="card" href="guide.html"><strong>Guide</strong><br>

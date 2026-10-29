@@ -133,3 +133,5 @@ th { background: var(--bg); }
   font: inherit; color: var(--text); background: var(--bg);
   border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px;
 }
+
+pre { overflow-x: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
