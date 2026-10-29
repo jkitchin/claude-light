@@ -95,9 +95,6 @@ def test_stats_data(client):
     assert data['recent']['n'] == 3
 
 
-def test_export(client):
-    client.get('/api?G=0.5')
-    client.app.state.store.flush()
-    lines = client.get('/data/export.csv').text.splitlines()
-    assert lines[0].startswith('t0,elapsed,origin,R,G,B,415nm')
-    assert len(lines) == 2
+
+def test_no_data_export(client):
+    assert client.get('/data/export.csv').status_code == 404

@@ -98,15 +98,12 @@ inverse problem, Latin hypercube, Bayesian optimization) are in
 [references/recipes.md](references/recipes.md). Read it when writing a full
 analysis.
 
-## Existing data
+## Usage statistics
 
-- `GET https://claude-light.cheme.cmu.edu/data/export.csv?since=<unix>&until=<unix>`
-  streams every measurement ever made (hundreds of thousands of rows: `t0`,
-  `elapsed`, `origin`, R, G, B, the 10 channels, an anonymous `user` hash, and
-  approximate location). Use `since` to limit it. Good for studying drift, or
-  for building models without new measurements.
-- `GET /stats/data.json` has the usage statistics behind
-  https://claude-light.cheme.cmu.edu/stats.
+`GET https://claude-light.cheme.cmu.edu/stats/data.json` has the usage
+statistics behind https://claude-light.cheme.cmu.edu/stats (counts per day,
+country and source; measurement times). Past measurements are not published,
+so collect the data you need.
 
 ## Other ways in
 

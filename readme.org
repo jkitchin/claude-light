@@ -257,7 +257,7 @@ Measurements are stored in a SQLite database in ~/claude-light-data/claude.db (s
 
 The location database is DB-IP Lite City (CC BY 4.0). Download it with [[./scripts/update_geodb.sh]]; a systemd timer refreshes it monthly (see [[./deploy/]]).
 
-The statistics page is at https://claude-light.cheme.cmu.edu/stats, and the anonymized data can be downloaded from https://claude-light.cheme.cmu.edu/data/export.csv.
+The statistics page is at https://claude-light.cheme.cmu.edu/stats. The measurement data itself is not published.
 
 Before 2026-10-29 results were appended to ~/results.jsonl. [[./scripts/migrate_jsonl.py]] loads that file into the database. It can be re-run; it only adds lines newer than what is already in the database.
 

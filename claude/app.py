@@ -10,23 +10,22 @@ import base64
 import csv
 import io
 import logging
-import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Form, Query, Request
+from fastapi import FastAPI, Form, Request
 from fastapi.responses import (HTMLResponse, JSONResponse, PlainTextResponse,
-                               RedirectResponse, StreamingResponse)
+                               RedirectResponse)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import config
 from .geo import Geo
-from .instrument import (CHANNELS, FakeInstrument, HardwareInstrument,
+from .instrument import (FakeInstrument, HardwareInstrument,
                          InstrumentService, QueueFull, TooManyForIP)
 from .stats import StatsCache
-from .store import CH_COLS, Store, connect
+from .store import Store
 
 log = logging.getLogger(__name__)
 
@@ -255,31 +254,6 @@ def create_app(instrument=None, db_path=None, geo_path=None):
         ok = s.last_ok is not False
         return JSONResponse({'ok': ok, 'last_t0': s.last_t0},
                             status_code=200 if ok else 503)
-
-    @app.get('/data/export.csv')
-    async def export(since: float = Query(0, description='Unix time'),
-                     until: float = Query(None, description='Unix time')):
-        """Anonymized measurements as CSV (no IP addresses)."""
-        cols = (['t0', 'elapsed', 'origin', 'R', 'G', 'B'] + CH_COLS
-                + ['ip_hash', 'country', 'country_name', 'region', 'city'])
-        header = (['t0', 'elapsed', 'origin', 'R', 'G', 'B'] + CHANNELS
-                  + ['user', 'country', 'country_name', 'region', 'city'])
-
-        def rows():
-            con = connect(db_path, readonly=True)
-            try:
-                cur = con.execute(
-                    f'SELECT {", ".join(cols)} FROM measurements '
-                    'WHERE t0 >= ? AND t0 < ? ORDER BY t0',
-                    (since, until if until is not None else time.time() + 1))
-                yield to_csv([header])
-                while chunk := cur.fetchmany(5000):
-                    yield to_csv(chunk)
-            finally:
-                con.close()
-
-        return StreamingResponse(rows(), media_type='text/csv', headers={
-            'Content-Disposition': 'attachment; filename="claude-light.csv"'})
 
     return app
 
