@@ -1,11 +1,77 @@
 {% extends "base.html" %}
+{% block head %}<script src="/static/hero.js" defer></script>{% endblock %}
 {% block content %}
-<h1>Claude-Light</h1>
-<p>Claude-Light is a remote-controlled instrument for learning statistics,
-regression, optimization and design of experiments. You set the brightness of a
-red, green and blue LED, and a spectral sensor measures the light at 8 visible
-wavelengths plus clear and near-infrared. There is one real instrument, shared
-by everyone, sitting in a lab at Carnegie Mellon University.</p>
+<section class="hero">
+  <div class="hero-text">
+    <h1>Claude-Light</h1>
+    <p class="lead">A real instrument you can run experiments on from anywhere.</p>
+    <p>Claude-Light is a remote-controlled instrument for learning statistics,
+    regression, optimization and design of experiments. You set the brightness
+    of a red, green and blue LED, and a spectral sensor measures the light at 8
+    visible wavelengths plus clear and near-infrared. There is one real
+    instrument, shared by everyone, sitting in a lab at Carnegie Mellon
+    University.</p>
+    <p class="hero-actions">
+      <a class="button" href="/gm">Run your first experiment</a>
+      <a class="button secondary" href="/docs">API docs</a>
+    </p>
+  </div>
+  <figure class="hero-figure card">
+    <svg id="hero-diagram" viewBox="0 0 640 270" role="img"
+         aria-labelledby="hero-diagram-title">
+      <title id="hero-diagram-title">Red, green and blue LEDs shine on a
+      spectral sensor, which reports the light at ten channels.</title>
+      <g class="hero-label">
+        <text x="48" y="30" text-anchor="middle">RGB LED</text>
+        <text x="278" y="98" text-anchor="middle">sensor</text>
+        <text x="489" y="24" text-anchor="middle">spectrum</text>
+      </g>
+      <polygon data-beam="R" fill="#ff3b30" points="64,62 64,78 252,146 252,134"/>
+      <polygon data-beam="G" fill="#34c759" points="64,132 64,148 252,146 252,134"/>
+      <polygon data-beam="B" fill="#0a84ff" points="64,202 64,218 252,146 252,134"/>
+      <g class="hero-leds">
+        <circle class="hero-socket" cx="48" cy="70" r="18"/>
+        <circle class="hero-socket" cx="48" cy="140" r="18"/>
+        <circle class="hero-socket" cx="48" cy="210" r="18"/>
+        <circle data-led="R" cx="48" cy="70" r="14" fill="#ff3b30"/>
+        <circle data-led="G" cx="48" cy="140" r="14" fill="#34c759"/>
+        <circle data-led="B" cx="48" cy="210" r="14" fill="#0a84ff"/>
+      </g>
+      <g class="hero-label">
+        <text x="12" y="75">R</text>
+        <text x="12" y="145">G</text>
+        <text x="12" y="215">B</text>
+      </g>
+      <rect class="hero-chip" x="252" y="110" width="52" height="60" rx="6"/>
+      <rect data-mix x="264" y="126" width="28" height="28" rx="3"/>
+      <text class="hero-label" x="278" y="190" text-anchor="middle">AS7341</text>
+      <path class="hero-arrow" d="M314 140 H338 M330 133 L338 140 L330 147"/>
+      <g class="hero-bars">
+        <rect data-bar x="352" y="40" width="22" height="190" fill="#8a3ffc"/>
+        <rect data-bar x="380" y="40" width="22" height="190" fill="#3d4bff"/>
+        <rect data-bar x="408" y="40" width="22" height="190" fill="#00a2e8"/>
+        <rect data-bar x="436" y="40" width="22" height="190" fill="#1fbf5a"/>
+        <rect data-bar x="464" y="40" width="22" height="190" fill="#9acd1e"/>
+        <rect data-bar x="492" y="40" width="22" height="190" fill="#f5b800"/>
+        <rect data-bar x="520" y="40" width="22" height="190" fill="#ff5a1f"/>
+        <rect data-bar x="548" y="40" width="22" height="190" fill="#c8102e"/>
+        <rect data-bar x="576" y="40" width="22" height="190" class="hero-clear"/>
+        <rect data-bar x="604" y="40" width="22" height="190" fill="#7a2a2a"/>
+      </g>
+      <line class="hero-axis" x1="346" y1="230.5" x2="632" y2="230.5"/>
+      <g class="hero-label hero-ticks" text-anchor="middle">
+        <text x="363" y="248">415</text><text x="391" y="248">445</text>
+        <text x="419" y="248">480</text><text x="447" y="248">515</text>
+        <text x="475" y="248">555</text><text x="503" y="248">590</text>
+        <text x="531" y="248">630</text><text x="559" y="248">680</text>
+        <text x="587" y="248">clr</text><text x="615" y="248">nir</text>
+        <text x="489" y="266">wavelength (nm)</text>
+      </g>
+    </svg>
+    <figcaption><code id="hero-call">/api?R=0.12&amp;G=0.45&amp;B=1.00</code>
+      <span class="muted">· illustration</span></figcaption>
+  </figure>
+</section>
 
 <h2>Run an experiment</h2>
 <div class="grid">
@@ -50,6 +116,21 @@ resp.json()['out']['515nm']</pre>
   for more.</p>
 </div>
 
+<h2>The instrument</h2>
+<div class="card instrument">
+  <img src="/static/claude-light.jpg" width="675" height="900" loading="lazy"
+       alt="The Claude-Light instrument: a Raspberry Pi in a black heat-sink case wired to a small board with an RGB LED and an AS7341 spectral sensor, with a camera ribbon cable leading to the sensor housing.">
+  <div>
+    <p>It is small: a Raspberry Pi drives an RGB LED, an AS7341 spectral sensor
+    reads the light, and a Pi camera can take a picture. Your
+    request joins a queue, the LED is set, the sensor integrates the light, and
+    the readings come back as JSON.</p>
+    <p>Because it is a real device, repeated measurements are not identical.
+    That is the point: you analyze data from a lab instrument, not a
+    simulation.</p>
+  </div>
+</div>
+
 <h2>On GitHub</h2>
 <div class="grid">
   <a class="card" href="https://github.com/jkitchin/claude-light"><strong>jkitchin/claude-light</strong><br>
@@ -59,8 +140,5 @@ resp.json()['out']['515nm']</pre>
     <span class="muted">A Python interface for Jupyter notebooks, with virtual
     instruments of increasing complexity and an MCP server for Claude
     Desktop.</span></a>
-  <a class="card" href="https://github.com/jkitchin/doe-book"><strong>jkitchin/doe-book</strong><br>
-    <span class="muted">Design of experiments, with examples that use
-    Claude-Light.</span></a>
 </div>
 {% endblock %}
